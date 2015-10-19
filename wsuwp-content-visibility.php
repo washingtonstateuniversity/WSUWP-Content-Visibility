@@ -39,6 +39,10 @@ class WSU_Content_Visibility {
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+
+		add_action( 'wp_ajax_get_content_visibility_groups', array( $this, 'ajax_get_groups' ) );
+		add_action( 'wp_ajax_set_content_visibility_groups', array( $this, 'ajax_set_groups' ) );
+		add_action( 'wp_ajax_search_content_visibility_groups', array( $this, 'ajax_search_groups' ) );
 	}
 
 	/**
@@ -191,10 +195,47 @@ class WSU_Content_Visibility {
 		wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', __FILE__ ), array( 'backbone' ), false, true );
 
 		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
-		$ajax_nonce = wp_create_nonce( 'wsu-sso-ad-groups' );
+		$ajax_nonce = wp_create_nonce( 'wsu-visibility-groups' );
 
 		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups', $data );
 		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups_nonce', $ajax_nonce );
+	}
+
+	/**
+	 * Retrieve a current list of groups attached to a post for display in the
+	 * admin modal.
+	 *
+	 * @since 0.1.0
+	 */
+	public function ajax_get_groups() {
+		check_ajax_referer( 'wsu-visibility-groups' );
+
+		echo json_encode( array() );
+		die();
+	}
+
+	/**
+	 * Save any changes made to a list of visibility groups assigned to a post.
+	 *
+	 * @since 0.1.0
+	 */
+	public function ajax_set_groups() {
+		check_ajax_referer( 'wsu-visibility-groups' );
+
+		echo json_encode( array() );
+		die();
+	}
+
+	/**
+	 * Retrieve a list of groups matching the provided search terms from an AJAX request.
+	 *
+	 * @since 0.1.0
+	 */
+	public function ajax_search_groups() {
+		check_ajax_referer( 'wsu-visibility-groups' );
+
+		echo json_encode( array() );
+		die();
 	}
 }
 
