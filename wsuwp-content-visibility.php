@@ -269,8 +269,48 @@ class WSU_Content_Visibility {
 	public function ajax_search_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
-		echo json_encode( array() );
-		die();
+		$search_text = sanitize_text_field( $_POST['visibility_group'] );
+
+		if ( empty( $search_text ) ) {
+			wp_send_json_error( 'Empty search text was submitted.' );
+		}
+
+		$post_id = absint( $_POST['post_id'] );
+
+		if ( 0 === $post_id ) {
+			$current_groups = array();
+		} else {
+			$current_groups = get_post_meta( $post_id, '_content_visibility_groups', true );
+		}
+
+		// Has this term been used recently?
+		$groups = wp_cache_get( md5( $search_text ), 'content-visibility' );
+
+		if ( ! $groups ) {
+			/**
+			 * Filter the groups attached to a search term.
+			 *
+			 * @since 0.1.0
+			 *
+			 * @param array  $groups      Group result data.
+			 * @param string $search_text Text used to search for a group.
+			 * @param int     $post_id     ID of the post being edited.
+			 */
+			$groups = apply_filters( 'content_visibility_group_search', $groups, $search_text, $post_id );
+
+			// Cache a search term's results for an hour.
+			wp_cache_add( md5( $search_text ), $groups, 'content-visibility', 3600 );
+		}
+
+		$return_groups = array();
+
+		foreach( $groups as $group ) {
+			$group['selected_class'] = in_array( $group['id'], $current_groups ) ? 'visibility-group-selected' : '';
+
+			$return_groups[] = $group;
+		}
+
+		wp_send_json_success( $return_groups );
 	}
 }
 
