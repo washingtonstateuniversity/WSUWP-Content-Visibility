@@ -53,6 +53,13 @@ class WSU_Content_Visibility {
 				return $caps;
 			}
 
+			$groups = get_post_meta( $post->ID, '_content_visibility_groups' );
+
+			// No content visible groups have been assigned to this post.
+			if ( empty( $groups ) ) {
+				return $caps;
+			}
+
 			$post_type = get_post_type_object( $post->post_type );
 
 			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
