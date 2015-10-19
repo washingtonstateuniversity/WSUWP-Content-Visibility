@@ -17,6 +17,8 @@ class WSU_Content_Visibility {
 	 * Maintain and return the one instance and initiate hooks when
 	 * called the first time.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return \WSU_Content_Visibility
 	 */
 	public static function get_instance() {
@@ -28,7 +30,9 @@ class WSU_Content_Visibility {
 	}
 
 	/**
-	 * Setup hooks to include.
+	 * Setup hooks to fire when the plugin is first initialized.
+	 *
+	 * @since 0.1.0
 	 */
 	public function setup_hooks() {
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
@@ -38,6 +42,8 @@ class WSU_Content_Visibility {
 
 	/**
 	 * Manage capabilities allowing those other than a post's author to read a private post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array  $caps    List of capabilities.
 	 * @param string $cap     The primitive capability.
@@ -94,6 +100,8 @@ class WSU_Content_Visibility {
 	/**
 	 * Add the meta boxes created by the plugin.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string  $post_type The slug of the current post type being edited.
 	 * @param WP_Post $post      The full post object being edited.
 	 */
@@ -103,6 +111,8 @@ class WSU_Content_Visibility {
 
 	/**
 	 * Display the meta box used to assign and maintain visibility for users and groups.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Post $post The current post being edited.
 	 */
@@ -157,6 +167,8 @@ class WSU_Content_Visibility {
 
 	/**
 	 * Enqueue Javascript required in the admin.
+	 *
+	 * @since 0.1.0
 	 */
 	public function admin_enqueue_scripts() {
 		wp_enqueue_style( 'wsuwp-ad-style', plugins_url( 'css/admin-style.min.css', __FILE__ ), array(), false );
@@ -171,6 +183,8 @@ class WSU_Content_Visibility {
 add_action( 'after_setup_theme', 'WSU_Content_Visibility' );
 /**
  * Start things up.
+ *
+ * @since 0.1.0
  *
  * @return \WSU_Content_Visibility
  */
