@@ -35,9 +35,20 @@ class WSU_Content_Visibility {
 	 * @since 0.1.0
 	 */
 	public function setup_hooks() {
+		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
-		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
+		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+	}
+
+	/**
+	 * Add support for WSUWP Content Visibility to built in post types.
+	 *
+	 * @since 0.1.0
+	 */
+	public function add_post_type_support() {
+		add_post_type_support( 'post', 'wsuwp-content-visibility' );
+		add_post_type_support( 'page', 'wsuwp-content-visibility' );
 	}
 
 	/**
@@ -98,15 +109,16 @@ class WSU_Content_Visibility {
 	}
 
 	/**
-	 * Add the meta boxes created by the plugin.
+	 * Add the meta boxes created by the plugin to supporting post types.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param string  $post_type The slug of the current post type being edited.
-	 * @param WP_Post $post      The full post object being edited.
 	 */
-	public function add_meta_boxes( $post_type, $post ) {
-		add_meta_box( 'wsuwp-content-visibility', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
+	public function add_meta_boxes( $post_type ) {
+		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) ) {
+			add_meta_box( 'wsuwp-content-visibility', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
+		}
 	}
 
 	/**
