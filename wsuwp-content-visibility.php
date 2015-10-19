@@ -60,6 +60,19 @@ class WSU_Content_Visibility {
 				return $caps;
 			}
 
+			/**
+			 * Filter whether a user is a member of the allowed groups to view this private content.
+			 *
+			 * @since 0.1.0
+			 *
+			 * @param bool  $value   Default false. True if the user is a member of the passed groups. False if not.
+			 * @param int   $user_id ID of the user attempting to view content.
+			 * @param array $groups  List of allowed groups attached to a post.
+			 */
+			if ( false === apply_filters( 'user_in_content_visibility_groups', false, $user_id, $groups ) ) {
+				return $caps;
+			}
+
 			$post_type = get_post_type_object( $post->post_type );
 
 			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
