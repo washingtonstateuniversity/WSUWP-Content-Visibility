@@ -53,10 +53,6 @@ class WSU_Content_Visibility {
 				return $caps;
 			}
 
-			if ( false === $this->user_can_read_content( $user_id, $post->ID ) ) {
-				return $caps;
-			}
-
 			$post_type = get_post_type_object( $post->post_type );
 
 			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
@@ -73,17 +69,6 @@ class WSU_Content_Visibility {
 		}
 
 		return $caps;
-	}
-
-	/**
-	 * Determine if a given user has been granted read access to a given post.
-	 *
-	 * @param int $user_id User ID.
-	 * @param int $post_id Post ID.
-	 * @return bool True if the user has access to read the post. False if not.
-	 */
-	public function user_can_read_content( $user_id, $post_id ) {
-		return true;
 	}
 
 	/**
