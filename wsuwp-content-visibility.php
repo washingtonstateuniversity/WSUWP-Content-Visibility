@@ -31,8 +31,59 @@ class WSU_Content_Visibility {
 	 * Setup hooks to include.
 	 */
 	public function setup_hooks() {
+		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+	}
+
+	/**
+	 * Manage capabilities allowing those other than a post's author to read a private post.
+	 *
+	 * @param array  $caps    List of capabilities.
+	 * @param string $cap     The primitive capability.
+	 * @param int    $user_id ID of the user.
+	 * @param array  $args    Additional data, contains post ID.
+	 * @return array Updated list of capabilities.
+	 */
+	public function allow_read_private_posts( $caps, $cap, $user_id, $args ) {
+		if ( ( 'read_post' === $cap && ! isset( $caps['read_post'] ) ) || ( 'read_page' === $cap && ! isset( $caps['read_page'] ) ) ) {
+			$post = get_post( $args[0] );
+
+			if ( 'private' !== $post->post_status ) {
+				return $caps;
+			}
+
+			if ( false === $this->user_can_read_content( $user_id, $post->ID ) ) {
+				return $caps;
+			}
+
+			$post_type = get_post_type_object( $post->post_type );
+
+			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
+
+			if ( 1 === count( $caps_keys ) ) {
+				$caps = array( $post_type->cap->read );
+			} else {
+				foreach( $caps_keys as $k => $v ) {
+					unset( $caps[ $v ] );
+				}
+				$caps[] = $post_type->cap->read;
+				$caps = array_values( $caps );
+			}
+		}
+
+		return $caps;
+	}
+
+	/**
+	 * Determine if a given user has been granted read access to a given post.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $post_id Post ID.
+	 * @return bool True if the user has access to read the post. False if not.
+	 */
+	public function user_can_read_content( $user_id, $post_id ) {
+		return true;
 	}
 
 	/**
