@@ -178,15 +178,21 @@ class WSU_Content_Visibility {
 	}
 
 	/**
-	 * Enqueue Javascript required in the admin.
+	 * Enqueue Javascript required in the admin on support post type screens.
 	 *
 	 * @since 0.1.0
 	 */
 	public function admin_enqueue_scripts() {
+		if ( ! isset( get_current_screen()->post_type ) || ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-visibility' ) ) {
+			return;
+		}
+
 		wp_enqueue_style( 'wsuwp-ad-style', plugins_url( 'css/admin-style.min.css', __FILE__ ), array(), false );
 		wp_enqueue_script( 'wsuwp-ad-group-view', plugins_url( 'js/content-visibility.min.js', __FILE__ ), array( 'backbone' ), false, true );
+
 		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
 		$ajax_nonce = wp_create_nonce( 'wsu-sso-ad-groups' );
+
 		wp_localize_script( 'wsuwp-ad-group-view', 'wsuADGroups', $data );
 		wp_localize_script( 'wsuwp-ad-group-view', 'wsuADGroups_nonce', $ajax_nonce );
 	}
