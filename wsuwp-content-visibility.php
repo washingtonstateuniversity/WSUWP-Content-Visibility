@@ -74,7 +74,7 @@ class WSU_Content_Visibility {
 				return $caps;
 			}
 
-			$groups = get_post_meta( $post->ID, '_content_visibility_groups' );
+			$groups = get_post_meta( $post->ID, '_content_visibility_groups', true );
 
 			// No content visible groups have been assigned to this post.
 			if ( empty( $groups ) ) {
@@ -210,8 +210,43 @@ class WSU_Content_Visibility {
 	public function ajax_get_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
-		echo json_encode( array() );
-		die();
+		$post_id = absint( $_POST['post_id'] );
+
+		if ( 0 === $post_id ) {
+			wp_send_json_error( 'Invalid post ID.' );
+		}
+
+		$groups = get_post_meta( $post_id, '_content_visibility_groups', true );
+
+		if ( empty( $groups ) ) {
+			wp_send_json_success( array() );
+		}
+
+		$return_groups = array();
+
+		foreach( $groups as $group ) {
+			$group_details = array(
+				'id' => $group,
+				'display_name' => $group,
+				'member_count' => '',
+				'member_list' => '',
+			);
+			/**
+			 * Filter the details associated with assigned visibility groups.
+			 *
+			 * @since 0.1.0
+			 *
+			 * @param array $group_details Array of details, containing only basic information by default.
+			 */
+			$group_details = apply_filters( 'content_visibility_group_details', $group_details );
+
+			// Current groups should always have the selected class enabled.
+			$group_details['selected_class'] = 'visibility-group-selected';
+
+			$return_groups[] = $group_details;
+		}
+
+		wp_send_json_success( $return_groups );
 	}
 
 	/**

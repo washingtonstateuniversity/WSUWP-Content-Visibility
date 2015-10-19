@@ -82,16 +82,16 @@ var wsuContentVisibility = wsuContentVisibility || {};
 					// @todo output response.data in an error message template.
 				} else {
 					var new_groups = [];
-					response_data = $.parseJSON( response );
-					$( response_data).each( function( item ) {
+					response_data = response['data'];
+					$( response_data ).each( function( item ) {
 						var group = new wsuContentVisibility.group( {
-							groupID: response_data[ item ].dn,
+							groupID: response_data[ item ].id,
 							groupName: response_data[ item ].display_name,
 							memberCount: response_data[ item ].member_count,
-							memberList: response_data[ item ].member,
+							memberList: response_data[ item ].member_list,
 							selectedClass: response_data[ item ].selected_class
 						});
-						new_groups.push( response_data[ item ].dn );
+						new_groups.push( response_data[ item ].id );
 						wsuContentVisibility.app.addOne( group, 'current' );
 					});
 					this.groups = new_groups;
