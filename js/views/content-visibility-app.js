@@ -6,17 +6,17 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 	wsuContentVisibility.appView = Backbone.View.extend({
 		// We provide this container by adding a meta box in WordPress.
-		el: '#wsuwp-sso-ad-group',
+		el: '#wsuwp-content-visibility',
 
 		// Setup the events used in the overall application view.
 		events: {
-			'click #wsu-group-manage': 'openGroupModal',
-			'click #wsu-group-search': 'searchGroups',
-			'click #wsu-save-groups': 'saveGroups',
-			'click #wsu-cancel-groups': 'cancelGroupSearch',
-			'click .ad-group-overlay-close': 'closeGroups',
-			'click .ad-group-single': 'toggleMemberList',
-			'click .ad-group-select': 'toggleGroupSelection'
+			'click #visibility-group-manage': 'openGroupModal',
+			'click #visibility-group-search': 'searchGroups',
+			'click #visibility-save-groups': 'saveGroups',
+			'click #visibility-cancel-groups': 'cancelGroupSearch',
+			'click .visibility-group-overlay-close': 'closeGroups',
+			'click .visibility-group-single': 'toggleMemberList',
+			'click .visibility-group-select': 'toggleGroupSelection'
 		},
 
 		/**
@@ -36,7 +36,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 */
 		initialize: function() {
 			// Convert the JSON object we receive from the document to an array.
-			this.groups = $.map(window.wsuADGroups, function(el) { return el; });
+			this.groups = $.map(window.wsuVisibilityGroups, function(el) { return el; });
 			this.groups_modified = this.groups;
 		},
 
@@ -47,9 +47,9 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * @param area  Area representing the list group is being added to.
 		 */
 		addOne: function( group, area ) {
-			var view = new wsuADVisibility.groupView({ model: group });
+			var view = new wsuContentVisibility.groupView({ model: group });
 
-			$('#ad-' + area + '-group-list').find('.ad-group-results').append( view.render().el );
+			$('#visibility-' + area + '-group-list').find('.visibility-group-results').append( view.render().el );
 		},
 
 		/**
@@ -70,8 +70,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 */
 		getCurrentGroups: function() {
 			var data = {
-				'action': 'wsuwp_get_ad_groups',
-				'_ajax_nonce' : wsuADGroups_nonce,
+				'action': 'wsuwp_get_content_visibility_groups',
+				'_ajax_nonce' : wsuVisibilityGroups_nonce,
 				'post_id': $('#post_ID').val()
 			};
 
@@ -84,7 +84,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 					var new_groups = [];
 					response_data = $.parseJSON( response );
 					$( response_data).each( function( item ) {
-						var group = new wsuADVisibility.group( {
+						var group = new wsuContentVisibility.group( {
 							groupID: response_data[ item ].dn,
 							groupName: response_data[ item ].display_name,
 							memberCount: response_data[ item ].member_count,
@@ -92,7 +92,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 							selectedClass: response_data[ item ].selected_class
 						});
 						new_groups.push( response_data[ item ].dn );
-						wsuADVisibility.app.addOne( group, 'current' );
+						wsuContentVisibility.app.addOne( group, 'current' );
 					});
 					this.groups = new_groups;
 				}
@@ -110,10 +110,10 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			this.showSearchList();
 
 			var data = {
-				'action': 'wsuwp_ad_group_check',
-				'_ajax_nonce' : wsuADGroups_nonce,
+				'action': 'wsuwp_visibility_group_check',
+				'_ajax_nonce' : wsuVisibilityGroups_nonce,
 				'post_id': $('#post_ID').val(),
-				'ad_group': $('#wsu-group-visibility').val()
+				'visibility_group': $('#wsu-group-visibility').val()
 			};
 
 			var response_data;
@@ -124,7 +124,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 				} else {
 					response_data = $.parseJSON( response );
 					$( response_data).each( function( item ) {
-						var group = new wsuADVisibility.group( {
+						var group = new wsuContentVisibility.group( {
 							groupID: response_data[ item ].dn,
 							groupName: response_data[ item ].display_name,
 							memberCount: response_data[ item ].member_count,
@@ -165,10 +165,10 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			evt.preventDefault();
 
 			var data = {
-				'action': 'wsuwp_ad_group_save',
-				'_ajax_nonce' : wsuADGroups_nonce,
+				'action': 'wsuwp_visibility_group_save',
+				'_ajax_nonce' : wsuVisibilityGroups_nonce,
 				'post_id': $('#post_ID').val(),
-				'ad_groups': this.groups_modified
+				'visibility_groups': this.groups_modified
 			};
 
 			$.post(ajaxurl, data, this.saveGroupResponse);
@@ -183,11 +183,11 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * @param response
 		 */
 		saveGroupResponse: function( response ) {
-			wsuADVisibility.app.getCurrentGroups();
-			wsuADVisibility.app.showCurrentList();
-			wsuADVisibility.app.clearCurrentList();
-			wsuADVisibility.app.clearSearchList();
-			wsuADVisibility.app.$('#wsu-group-visibility').val('');
+			wsuContentVisibility.app.getCurrentGroups();
+			wsuContentVisibility.app.showCurrentList();
+			wsuContentVisibility.app.clearCurrentList();
+			wsuContentVisibility.app.clearSearchList();
+			wsuContentVisibility.app.$('#wsu-group-visibility').val('');
 		},
 
 		/**
@@ -195,12 +195,12 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * the AD group search.
 		 */
 		toggleOverlay: function() {
-			var $overlay = $('.ad-group-overlay');
+			var $overlay = $('.visibility-group-overlay');
 
-			if ( $overlay.hasClass('ad-group-overlay-open') ) {
-				$overlay.removeClass('ad-group-overlay-open');
+			if ( $overlay.hasClass('visibility-group-overlay-open') ) {
+				$overlay.removeClass('visibility-group-overlay-open');
 			} else {
-				$overlay.addClass('ad-group-overlay-open');
+				$overlay.addClass('visibility-group-overlay-open');
 			}
 		},
 
@@ -212,20 +212,20 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		toggleMemberList: function(evt) {
 			var $target = $(evt.target);
 
-			if ( $target.is( '.ad-group-select' ) ) {
+			if ( $target.is( '.visibility-group-select' ) ) {
 				return;
 			}
 
-			if ( ! $target.is( '.ad-group-single' ) ) {
-				$target = $target.parents('.ad-group-single');
+			if ( ! $target.is( '.visibility-group-single' ) ) {
+				$target = $target.parents('.visibility-group-single');
 			}
 
-			var $target_members = $target.find('.ad-group-members');
+			var $target_members = $target.find('.visibility-group-members');
 
-			if ( $target_members.hasClass('ad-group-members-open') ) {
-				$target_members.removeClass('ad-group-members-open');
+			if ( $target_members.hasClass('visibility-group-members-open') ) {
+				$target_members.removeClass('visibility-group-members-open');
 			} else {
-				$target_members.addClass('ad-group-members-open');
+				$target_members.addClass('visibility-group-members-open');
 			}
 		},
 
@@ -240,10 +240,10 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 			if ( $.inArray( data, this.groups_modified ) > -1 ) {
 				this.groups_modified = _.without( this.groups_modified, data);
-				$target.removeClass('ad-group-selected');
+				$target.removeClass('visibility-group-selected');
 			} else {
 				this.groups_modified.push(data);
-				$target.addClass('ad-group-selected');
+				$target.addClass('visibility-group-selected');
 			}
 		},
 
@@ -251,7 +251,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * Remove any search results when an action is taken to hide the search view.
 		 */
 		clearSearchList: function() {
-			this.$('#ad-find-group-list .ad-group-results').html('');
+			this.$('#visibility-find-group-list .visibility-group-results').html('');
 		},
 
 		/**
@@ -259,7 +259,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * prep for possible future use.
 		 */
 		clearCurrentList: function() {
-			this.$('#ad-current-group-list .ad-group-results').html('');
+			this.$('#visibility-current-group-list .visibility-group-results').html('');
 		},
 
 		/**
@@ -267,7 +267,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * open, clear the current results to make room for the new search results.
 		 */
 		showSearchList: function() {
-			if ( $('#ad-find-group-list').hasClass('ad-group-list-open') ) {
+			if ( $('#visibility-find-group-list').hasClass('visibility-group-list-open') ) {
 				this.clearSearchList();
 			} else {
 				this.toggleLists();
@@ -278,14 +278,14 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * Force the current groups list to appear and hide the search results.
 		 */
 		showCurrentList: function() {
-			var $current_group = $('#ad-current-group-list'),
-				$find_group = $('#ad-find-group-list');
+			var $current_group = $('#visibility-current-group-list'),
+				$find_group = $('#visibility-find-group-list');
 
-			if ( $find_group.hasClass('ad-group-list-open') ) {
-				$find_group.removeClass('ad-group-list-open');
-				$find_group.find('.ad-group-tab').removeClass('ad-current-tab');
-				$current_group.addClass('ad-group-list-open');
-				$current_group.find('.ad-group-tab').addClass('ad-current-tab');
+			if ( $find_group.hasClass('visibility-group-list-open') ) {
+				$find_group.removeClass('visibility-group-list-open');
+				$find_group.find('.visibility-group-tab').removeClass('visibility-current-tab');
+				$current_group.addClass('visibility-group-list-open');
+				$current_group.find('.visibility-group-tab').addClass('visibility-current-tab');
 			}
 		},
 
@@ -294,13 +294,13 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * the overlay.
 		 */
 		toggleLists: function() {
-			$('.ad-group-list').each(function(){
-				if ( $(this).hasClass('ad-group-list-open') ) {
-					$(this).removeClass('ad-group-list-open');
-					$(this).find('.ad-group-tab').removeClass('ad-current-tab');
+			$('.visibility-group-list').each(function(){
+				if ( $(this).hasClass('visibility-group-list-open') ) {
+					$(this).removeClass('visibility-group-list-open');
+					$(this).find('.visibility-group-tab').removeClass('visibility-current-tab');
 				} else {
-					$(this).addClass('ad-group-list-open');
-					$(this).find('.ad-group-tab').addClass('ad-current-tab');
+					$(this).addClass('visibility-group-list-open');
+					$(this).find('.visibility-group-tab').addClass('visibility-current-tab');
 				}
 			});
 		},
