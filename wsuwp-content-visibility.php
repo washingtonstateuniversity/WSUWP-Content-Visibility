@@ -257,8 +257,20 @@ class WSU_Content_Visibility {
 	public function ajax_set_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
-		echo json_encode( array() );
-		die();
+		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
+			wp_send_json_error( 'Invalid post ID.' );
+		}
+
+		if ( ! isset( $_POST['visibility_groups'] ) || empty( $_POST['visibility_groups'] ) ) {
+			wp_send_json_success( 'No changes.' );
+		}
+
+		$post_id = absint( $_POST['post_id'] );
+		$group_ids = array_filter( $_POST['visibility_groups'], 'sanitize_text_field' );
+
+		update_post_meta( $post_id, '_content_visibility_groups', $group_ids );
+
+		wp_send_json_success( 'Changes saved.' );
 	}
 
 	/**
