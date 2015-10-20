@@ -3,6 +3,7 @@
 class WSUW_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 	public function test_ajax_get_groups_invalid_post_id() {
 		$this->_setRole( 'administrator' );
+
 		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
 		$_POST['post_id'] = 0;
 
@@ -21,6 +22,8 @@ class WSUW_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 	}
 
 	public function test_ajax_get_groups_valid_post_id_with_no_saved_groups() {
+		$this->_setRole( 'administrator' );
+
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Title' ) );
 		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
 		$_POST['post_id'] = $post_id;
@@ -42,6 +45,8 @@ class WSUW_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 	}
 
 	public function test_ajax_get_groups_valid_post_id_with_saved_groups() {
+		$this->_setRole( 'administrator' );
+
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Title' ) );
 		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
 		$_POST['post_id'] = $post_id;
@@ -95,6 +100,8 @@ class WSUW_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 	}
 
 	public function test_ajax_get_groups_valid_post_id_with_filtered_saved_groups() {
+		$this->_setRole( 'administrator' );
+
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Title' ) );
 		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
 		$_POST['post_id'] = $post_id;
