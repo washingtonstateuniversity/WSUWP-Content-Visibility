@@ -144,4 +144,81 @@ class WSUW_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 
 		$this->assertEquals( $expected_response, $response );
 	}
+
+	public function test_ajax_set_groups_valid_post_id() {
+		$this->_setRole('administrator');
+
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Title' ) );
+		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
+		$_POST['post_id'] = $post_id;
+		$_POST['visibility_groups'] = array( 'new_group_1', 'new_group_2' );
+
+		try {
+			$this->_handleAjax( 'set_content_visibility_groups' );
+		} catch ( WPAjaxDieStopException $e ) {
+			unset( $e );
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$expected_response = array(
+			'success' => true,
+			'data' => 'Changes saved.',
+		);
+
+		$this->assertEquals( $expected_response, $response );
+	}
+
+	public function test_ajax_set_groups_valid_post_id_empty_groups() {
+		$this->_setRole('administrator');
+
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Title' ) );
+		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
+		$_POST['post_id'] = $post_id;
+		$_POST['visibility_groups'] = array();
+
+		try {
+			$this->_handleAjax( 'set_content_visibility_groups' );
+		} catch ( WPAjaxDieStopException $e ) {
+			unset( $e );
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$expected_response = array(
+			'success' => true,
+			'data' => 'No changes.',
+		);
+
+		$this->assertEquals( $expected_response, $response );
+	}
+
+	public function test_ajax_set_groups_invalid_post_id() {
+		$this->_setRole('administrator');
+
+		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
+		$_POST['post_id'] = 0;
+		$_POST['visibility_groups'] = array( 'new_group_1', 'new_group_2' );
+
+		try {
+			$this->_handleAjax( 'set_content_visibility_groups' );
+		} catch ( WPAjaxDieStopException $e ) {
+			unset( $e );
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$expected_response = array(
+			'success' => false,
+			'data' => 'Invalid post ID.',
+		);
+
+		$this->assertEquals( $expected_response, $response );
+	}
 }
