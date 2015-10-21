@@ -14,7 +14,7 @@ class WSU_Content_Visibility {
 	private static $instance;
 
 	/**
-	 * Maintain and return the one instance and initiate hooks when
+	 * Maintain and return the one instance of the plugin. Initiate hooks when
 	 * called the first time.
 	 *
 	 * @since 0.1.0
@@ -57,6 +57,9 @@ class WSU_Content_Visibility {
 
 	/**
 	 * Manage capabilities allowing those other than a post's author to read a private post.
+	 *
+	 * By default, a post's author has private post capabilities for this post, so we return
+	 * the current capabilities untouched.
 	 *
 	 * @since 0.1.0
 	 *
