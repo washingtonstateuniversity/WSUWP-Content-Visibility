@@ -198,6 +198,11 @@
 	margin-top: 25px;
 }
 
+.no-group-results {
+	font-size: 1.1rem;
+	padding: 20px;
+}
+
 .visibility-group-list-open {
 	display: block;
 }

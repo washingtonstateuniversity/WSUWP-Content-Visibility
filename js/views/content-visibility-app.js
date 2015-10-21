@@ -123,16 +123,21 @@ var wsuContentVisibility = wsuContentVisibility || {};
 					// @todo Output response.data in an error message template.
 				} else {
 					response_data = response['data'];
-					$( response_data).each( function( item ) {
-						var group = new wsuContentVisibility.group( {
-							groupID: response_data[ item ].id,
-							groupName: response_data[ item ].display_name,
-							memberCount: response_data[ item ].member_count,
-							memberList: response_data[ item ].member_list,
-							selectedClass: response_data[ item ].selected_class
+
+					if ( 0 === response_data.length ) {
+						$('.visibility-group-results').html('<div class="no-group-results">No matching results...</div>' );
+					} else {
+						$( response_data).each( function( item ) {
+							var group = new wsuContentVisibility.group( {
+								groupID: response_data[ item ].id,
+								groupName: response_data[ item ].display_name,
+								memberCount: response_data[ item ].member_count,
+								memberList: response_data[ item ].member_list,
+								selectedClass: response_data[ item ].selected_class
+							});
+							wsuContentVisibility.app.addOne( group, 'find' );
 						});
-						wsuContentVisibility.app.addOne( group, 'find' );
-					});
+					}
 				}
 			});
 		},
