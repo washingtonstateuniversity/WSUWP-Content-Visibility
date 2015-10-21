@@ -248,6 +248,32 @@ class WSUW_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 		$this->assertEquals( $expected_response, $response );
 	}
 
+	public function test_ajax_search_groups_one_character_search_text() {
+		$this->_setRole('administrator');
+
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Title' ) );
+		$_POST['_ajax_nonce'] = wp_create_nonce( 'wsu-visibility-groups' );
+		$_POST['post_id'] = $post_id;
+		$_POST['visibility_group'] = 'a';
+
+		try {
+			$this->_handleAjax( 'search_content_visibility_groups' );
+		} catch ( WPAjaxDieStopException $e ) {
+			unset( $e );
+		} catch ( WPAjaxDieContinueException $e ) {
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$expected_response = array(
+			'success' => false,
+			'data' => 'Please provide more than one character.',
+		);
+
+		$this->assertEquals( $expected_response, $response );
+	}
+
 	public function filter_group_search( $groups, $search_text ) {
 		if ( 'test' === $search_text ) {
 			$groups = array(
