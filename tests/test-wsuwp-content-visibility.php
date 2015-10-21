@@ -1,6 +1,23 @@
 <?php
 
 class WSUWP_Content_Visibility extends WP_UnitTestCase {
+	public function test_post_author_with_no_content_visibility_groups_return_true() {
+		$user_id = $this->factory->user->create( array( 'user_login' => 'testuser', 'role' => 'Contributor' ) );
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'private', 'post_author' => $user_id ) );
+
+		$post = get_post( $post_id );
+		$post_type = get_post_type_object( $post->post_type );
+
+		$caps = array( $post_type->cap->read_private_posts );
+		$filtered_caps = array( $post_type->cap->read_private_posts );
+
+		$cap = 'read_post';
+		$args = array( $post->ID );
+
+		$content_visibility = WSU_Content_Visibility();
+
+		$this->assertEquals( $filtered_caps, $content_visibility->allow_read_private_posts( $caps, $cap, $user_id, $args ) );
+	}
 
 	public function test_user_in_content_visibility_groups_return_false() {
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'private' ) );

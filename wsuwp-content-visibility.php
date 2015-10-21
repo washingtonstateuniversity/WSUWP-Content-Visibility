@@ -74,6 +74,11 @@ class WSU_Content_Visibility {
 				return $caps;
 			}
 
+			// Post authors can view their own posts.
+			if ( $user_id == $post->post_author ) {
+				return $caps;
+			}
+
 			$groups = get_post_meta( $post->ID, '_content_visibility_groups', true );
 
 			// No content visible groups have been assigned to this post.
