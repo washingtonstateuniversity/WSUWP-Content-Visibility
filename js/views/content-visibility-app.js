@@ -5,10 +5,15 @@ var wsuContentVisibility = wsuContentVisibility || {};
 	'use strict';
 
 	wsuContentVisibility.appView = Backbone.View.extend({
-		// We provide this container by adding a meta box in WordPress.
+
+		/**
+		 * Primary container to work with. We add this via meta box.
+		 */
 		el: '#wsuwp-content-visibility',
 
-		// Setup the events used in the overall application view.
+		/**
+		 * Setup the events we manage in this plugin.
+		 */
 		events: {
 			'click #visibility-group-manage': 'openGroupModal',
 			'click #visibility-group-search': 'searchGroups',
@@ -17,8 +22,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			'click .visibility-group-overlay-close': 'closeGroups',
 			'click .visibility-group-single': 'toggleMemberList',
 			'click .visibility-group-select': 'toggleGroupSelection',
-			'keydown #visibility-search-term' : 'searchGroups',
-
+			'keydown #visibility-search-term' : 'searchGroups'
 		},
 
 		/**
@@ -32,9 +36,11 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		groups_modified: [],
 
 		/**
-		 * Initialize the view by grabbing the list of current AD groups from the DOM. These
+		 * Initialize the view by grabbing the list of current groups from the DOM. These
 		 * groups are also stored in a "modified" array that allows us to track changes before
 		 * they are sent to the server.
+		 *
+		 * @since 0.1.0
 		 */
 		initialize: function() {
 			// Convert the JSON object we receive from the document to an array.
@@ -44,6 +50,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 		/**
 		 * Create a view for individual groups retrieved via our group search.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param group Group to add to the list.
 		 * @param area  Area representing the list group is being added to.
@@ -56,19 +64,19 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 		/**
 		 * Open the modal overlay that will be used to add, remove, and search for
-		 * AD groups that are added as editors to the page.
+		 * groups having visibility access to this post.
 		 *
-		 * @param evt
+		 * @since 0.1.0
 		 */
-		openGroupModal: function(evt) {
-			evt.preventDefault();
-
+		openGroupModal: function() {
 			this.getCurrentGroups();
 			this.toggleOverlay();
 		},
 
 		/**
 		 * Retrieve a list of current groups assigned to this post from the server.
+		 *
+		 * @since 0.1.0
 		 */
 		getCurrentGroups: function() {
 			var data = {
@@ -101,6 +109,11 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			});
 		},
 
+		/**
+		 * Remove the group results spinner class if it is currently assigned.
+		 *
+		 * @since 0.1.0
+		 */
 		removeSearchSpinner: function() {
 			var $vis_group_results = $('.visibility-group-results');
 
@@ -109,6 +122,11 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			}
 		},
 
+		/**
+		 * Show the group results spinner class if it isn't yet assigned.
+		 *
+		 * @since 0.1.0
+		 */
 		showSearchSpinner: function() {
 			var $vis_group_results = $('.visibility-group-results');
 
@@ -118,16 +136,18 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		},
 
 		/**
-		 * Search Active Directory for groups matching the given parameters.
+		 * Send search terms to the server to look for groups matching the given parameters.
 		 *
-		 * @param evt
+		 * @since 0.1.0
+		 *
+		 * @param {object} e A click or keydown event.
 		 */
-		searchGroups: function(evt) {
+		searchGroups: function(e) {
 			// Watch for and handle enter key initialized searches.
-			if ( 'keydown' === evt.type && 13 === evt.keyCode ) {
-				evt.preventDefault();
-				evt.stopPropagation();
-			} else if ( 'keydown' === evt.type ) {
+			if ( 'keydown' === e.type && 13 === e.keyCode ) {
+				e.preventDefault();
+				e.stopPropagation();
+			} else if ( 'keydown' === e.type ) {
 				return true;
 			}
 
@@ -173,11 +193,9 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * If Cancel is clicked, bail out of any search results that have
 		 * been processed thus far.
 		 *
-		 * @param evt
+		 * @since 0.1.0
 		 */
-		cancelGroupSearch: function(evt) {
-			evt.preventDefault();
-
+		cancelGroupSearch: function() {
 			this.groups_modified = this.groups;
 			this.clearCurrentList();
 			this.getCurrentGroups();
@@ -191,11 +209,9 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * treated as a close action for that group list, so clear the search
 		 * results as well.
 		 *
-		 * @param evt
+		 * @since 0.1.0
 		 */
-		saveGroups: function(evt) {
-			evt.preventDefault();
-
+		saveGroups: function() {
 			var data = {
 				'action': 'set_content_visibility_groups',
 				'_ajax_nonce' : wsuVisibilityGroups_nonce,
@@ -212,6 +228,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 *
 		 * @todo actually handle the response properly.
 		 *
+		 * @since 0.1.0
+		 *
 		 * @param response
 		 */
 		saveGroupResponse: function( response ) {
@@ -223,8 +241,9 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		},
 
 		/**
-		 * Show and hide the overlay used to display results from
-		 * the AD group search.
+		 * Show and hide the overlay used to display results from the group search.
+		 *
+		 * @since 0.1.0
 		 */
 		toggleOverlay: function() {
 			var $overlay = $('.visibility-group-overlay');
@@ -239,10 +258,12 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		/**
 		 * Show and hide the group members area below each group in a list.
 		 *
-		 * @param evt
+		 * @since 0.1.0
+		 *
+		 * @param {object} e Click event.
 		 */
-		toggleMemberList: function(evt) {
-			var $target = $(evt.target);
+		toggleMemberList: function(e) {
+			var $target = $(e.target);
 
 			if ( $target.is( '.visibility-group-select' ) ) {
 				return;
@@ -264,10 +285,12 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		/**
 		 * Toggle the visual indicator showing a selected group in a list.
 		 *
-		 * @param evt
+		 * @since 0.1.0
+		 *
+		 * @param {object} e Click event.
 		 */
-		toggleGroupSelection: function(evt) {
-			var $target = $(evt.target),
+		toggleGroupSelection: function(e) {
+			var $target = $(e.target),
 				data = $target.data('group-id'); // string representing the group selection.
 
 			if ( $.inArray( data, this.groups_modified ) > -1 ) {
@@ -281,6 +304,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 		/**
 		 * Remove any search results when an action is taken to hide the search view.
+		 *
+		 * @since 0.1.0
 		 */
 		clearSearchList: function() {
 			this.$('#visibility-find-group-list .visibility-group-results').html('');
@@ -289,6 +314,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		/**
 		 * Remove any values from the current group lists when hiding the modal to
 		 * prep for possible future use.
+		 *
+		 * @since 0.1.0
 		 */
 		clearCurrentList: function() {
 			this.$('#visibility-current-group-list .visibility-group-results').html('');
@@ -297,6 +324,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		/**
 		 * Show the search list after a search. If the search results tab is already
 		 * open, clear the current results to make room for the new search results.
+		 *
+		 * @since 0.1.0
 		 */
 		showSearchList: function() {
 			if ( $('#visibility-find-group-list').hasClass('visibility-group-list-open') ) {
@@ -308,6 +337,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 		/**
 		 * Force the current groups list to appear and hide the search results.
+		 *
+		 * @since 0.1.0
 		 */
 		showCurrentList: function() {
 			var $current_group = $('#visibility-current-group-list'),
@@ -322,8 +353,10 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		},
 
 		/**
-		 * Toggle the display of the current and search lists of AD groups inside
+		 * Toggle the display of the current and search lists of groups inside
 		 * the overlay.
+		 *
+		 * @since 0.1.0
 		 */
 		toggleLists: function() {
 			$('.visibility-group-list').each(function(){
@@ -340,6 +373,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		/**
 		 * Remove the overlay from the screen and clear the list of groups
 		 * when the close button is pressed.
+		 *
+		 * @since 0.1.0
 		 */
 		closeGroups: function() {
 			this.toggleOverlay();
