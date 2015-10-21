@@ -287,6 +287,10 @@ class WSU_Content_Visibility {
 			wp_send_json_error( 'Empty search text was submitted.' );
 		}
 
+		if ( 1 === mb_strlen( $search_text ) ) {
+			wp_send_json_error( 'Please provide more than one character.' );
+		}
+
 		$post_id = absint( $_POST['post_id'] );
 
 		if ( 0 === $post_id ) {
