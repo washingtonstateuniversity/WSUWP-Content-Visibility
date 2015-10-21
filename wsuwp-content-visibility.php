@@ -146,7 +146,7 @@ class WSU_Content_Visibility {
 				</div>
 				<div class="visibility-group-overlay-body">
 					<div class="visibility-group-search-area">
-						<input type="text" id="wsu-group-visibility" name="wsu_group_visibility" class="widefat" />
+						<input type="text" id="visibility-search-term" name="visibility_search_term" class="widefat" />
 						<input type="button" id="visibility-group-search" class="button button-primary button-large" value="Find" />
 					</div>
 					<div class="visibility-save-cancel">

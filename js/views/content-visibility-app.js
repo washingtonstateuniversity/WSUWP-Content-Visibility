@@ -113,7 +113,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 				'action': 'search_content_visibility_groups',
 				'_ajax_nonce' : wsuVisibilityGroups_nonce,
 				'post_id': $('#post_ID').val(),
-				'visibility_group': $('#wsu-group-visibility').val()
+				'visibility_group': $('#visibility-search-term').val()
 			};
 
 			var response_data;
@@ -151,7 +151,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			this.getCurrentGroups();
 			this.showCurrentList();
 			this.clearSearchList();
-			this.$('#wsu-group-visibility').val('');
+			this.$('#visibility-search-term').val('');
 		},
 
 		/**
@@ -187,7 +187,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			wsuContentVisibility.app.showCurrentList();
 			wsuContentVisibility.app.clearCurrentList();
 			wsuContentVisibility.app.clearSearchList();
-			wsuContentVisibility.app.$('#wsu-group-visibility').val('');
+			wsuContentVisibility.app.$('#visibility-search-term').val('');
 		},
 
 		/**
@@ -313,7 +313,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			this.toggleOverlay();
 			this.clearSearchList();
 			this.clearCurrentList();
-			this.$('#wsu-group-visibility').val('');
+			this.$('#visibility-search-term').val('');
 		}
 	});
 })(window, Backbone, jQuery, _, wsuContentVisibility);
