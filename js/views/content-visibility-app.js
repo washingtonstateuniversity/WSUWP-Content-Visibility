@@ -128,7 +128,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 			$.post(ajaxurl, data, function(response) {
 				if ( response['success'] === false ) {
-					// @todo Output response.data in an error message template.
+					$('.visibility-group-results').html('<div class="no-group-results">Error: ' + response['data'] + '</div>' );
 				} else {
 					response_data = response['data'];
 
