@@ -159,7 +159,7 @@ class WSU_Content_Visibility {
 					</div>
 					<div id="visibility-find-group-list" class="visibility-group-list">
 						<div id="visibility-find-group-tab" class="visibility-group-tab">Group Results</div>
-						<div class="visibility-group-results"></div>"
+						<div class="visibility-group-results pending-results"></div>"
 					</div>
 				</div>
 			</div>

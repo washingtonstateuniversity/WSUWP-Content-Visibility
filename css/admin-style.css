@@ -198,6 +198,10 @@
 	margin-top: 25px;
 }
 
+.pending-results {
+	background: url( '../images/spinner.gif' ) no-repeat center center;
+}
+
 .no-group-results {
 	font-size: 1.1rem;
 	padding: 20px;

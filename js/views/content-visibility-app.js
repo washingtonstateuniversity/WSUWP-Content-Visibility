@@ -101,6 +101,22 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			});
 		},
 
+		removeSearchSpinner: function() {
+			var $vis_group_results = $('.visibility-group-results');
+
+			if ( $vis_group_results.hasClass('pending-results' )) {
+				$vis_group_results.removeClass('pending-results');
+			}
+		},
+
+		showSearchSpinner: function() {
+			var $vis_group_results = $('.visibility-group-results');
+
+			if ( false === $vis_group_results.hasClass('pending-results') ) {
+				$vis_group_results.addClass('pending-results');
+			}
+		},
+
 		/**
 		 * Search Active Directory for groups matching the given parameters.
 		 *
@@ -115,6 +131,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 				return true;
 			}
 
+			this.showSearchSpinner();
 			this.showSearchList();
 
 			var data = {
@@ -127,6 +144,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			var response_data;
 
 			$.post(ajaxurl, data, function(response) {
+				wsuContentVisibility.app.removeSearchSpinner();
+
 				if ( response['success'] === false ) {
 					$('.visibility-group-results').html('<div class="no-group-results">Error: ' + response['data'] + '</div>' );
 				} else {
