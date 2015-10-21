@@ -16,7 +16,9 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			'click #visibility-cancel-groups': 'cancelGroupSearch',
 			'click .visibility-group-overlay-close': 'closeGroups',
 			'click .visibility-group-single': 'toggleMemberList',
-			'click .visibility-group-select': 'toggleGroupSelection'
+			'click .visibility-group-select': 'toggleGroupSelection',
+			'keydown #visibility-search-term' : 'searchGroups',
+
 		},
 
 		/**
@@ -105,7 +107,13 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * @param evt
 		 */
 		searchGroups: function(evt) {
-			evt.preventDefault();
+			// Watch for and handle enter key initialized searches.
+			if ( 'keydown' === evt.type && 13 === evt.keyCode ) {
+				evt.preventDefault();
+				evt.stopPropagation();
+			} else if ( 'keydown' === evt.type ) {
+				return true;
+			}
 
 			this.showSearchList();
 
