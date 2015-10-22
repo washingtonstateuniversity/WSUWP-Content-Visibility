@@ -1,5 +1,7 @@
 # WSU Content Visibility
 
+[![Build Status](https://travis-ci.org/washingtonstateuniversity/WSUWP-Content-Visibility.svg?branch=master)](https://travis-ci.org/washingtonstateuniversity/WSUWP-Content-Visibility)
+
 Control the visibility of content for groups of authenticated users.
 
 ## Overview
