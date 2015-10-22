@@ -4,6 +4,7 @@ notifications:
   email:
     on_success: never
     on_failure: change
+  slack: wsu-ucomm:n2TLZRJd84rMOMbkKthSEMgS
 
 php:
   - 5.3
