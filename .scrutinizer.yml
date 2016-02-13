@@ -35,3 +35,4 @@ build_failure_conditions: {  }
 filter:
     excluded_paths:
         - bin/*
+        - tests/*
