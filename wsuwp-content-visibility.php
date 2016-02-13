@@ -78,7 +78,7 @@ class WSU_Content_Visibility {
 			}
 
 			// Post authors can view their own posts.
-			if ( $user_id == $post->post_author ) {
+			if ( (int) $post->post_author === $user_id ) {
 				return $caps;
 			}
 
@@ -109,7 +109,7 @@ class WSU_Content_Visibility {
 			if ( 1 === count( $caps_keys ) ) {
 				$caps = array( $post_type->cap->read );
 			} else {
-				foreach( $caps_keys as $k => $v ) {
+				foreach ( $caps_keys as $k => $v ) {
 					unset( $caps[ $v ] );
 				}
 				$caps[] = $post_type->cap->read;
@@ -232,7 +232,7 @@ class WSU_Content_Visibility {
 
 		$return_groups = array();
 
-		foreach( $groups as $group ) {
+		foreach ( $groups as $group ) {
 			$group_details = array(
 				'id' => $group,
 				'display_name' => $group,
@@ -328,7 +328,7 @@ class WSU_Content_Visibility {
 
 		$return_groups = array();
 
-		foreach( $groups as $group ) {
+		foreach ( $groups as $group ) {
 			$group['selected_class'] = in_array( $group['id'], (array) $current_groups ) ? 'visibility-group-selected' : '';
 
 			$return_groups[] = $group;
