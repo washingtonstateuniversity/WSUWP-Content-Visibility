@@ -78,7 +78,7 @@ class WSU_Content_Visibility {
 			}
 
 			// Post authors can view their own posts.
-			if ( $user_id == $post->post_author ) {
+			if ( (int) $post->post_author === $user_id ) {
 				return $caps;
 			}
 
