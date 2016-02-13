@@ -7,8 +7,8 @@ notifications:
   slack: wsu-ucomm:n2TLZRJd84rMOMbkKthSEMgS
 
 php:
-  - 5.3
   - 5.6
+  - 7.0
 
 env:
     # trunk:
