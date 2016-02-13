@@ -2,13 +2,7 @@
 <ruleset name="WSUWP Content Visibility">
     <description>Sniffs for the coding standards of the WSUWP Content Visibility plugin</description>
 
-    <rule ref="WordPress-VIP">
+    <rule ref="WordPress-Extra">
         <exclude name="WordPress.NamingConventions.ValidFunctionName" />
-        <exclude name="WordPress.CSRF.NonceVerification" />
-        <exclude name="WordPress.WhiteSpace.ControlStructureSpacing" />
-        <exclude name="WordPress.VIP.DirectDatabaseQuery" />
-        <exclude name="WordPress.VIP.SlowDBQuery" />
-        <exclude name="WordPress.VIP.SuperGlobalInputUsage" />
-        <exclude name="WordPress.VIP.ValidatedSanitizedInput" />
     </rule>
 </ruleset>
