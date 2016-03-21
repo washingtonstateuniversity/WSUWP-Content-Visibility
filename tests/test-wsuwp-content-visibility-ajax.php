@@ -1,6 +1,6 @@
 <?php
 
-class WSUW_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
+class Test_WSUWP_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 	public function test_ajax_get_groups_invalid_post_id() {
 		$this->_setRole( 'administrator' );
 
