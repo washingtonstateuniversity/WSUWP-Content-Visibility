@@ -329,7 +329,7 @@ class WSU_Content_Visibility {
 		$return_groups = array();
 
 		foreach ( $groups as $group ) {
-			$group['selected_class'] = in_array( $group['id'], (array) $current_groups ) ? 'visibility-group-selected' : '';
+			$group['selected_class'] = in_array( $group['id'], (array) $current_groups, true ) ? 'visibility-group-selected' : '';
 
 			$return_groups[] = $group;
 		}
