@@ -523,20 +523,6 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Clean an AD member string so that only a CN is returned, not the entire result.
-	 *
-	 * @param string $member
-	 *
-	 * @return string
-	 */
-	public function clean_members( $member ) {
-		$member = array_shift( explode( ',', $member ) );
-		$member = array_pop( explode( '=', $member ) );
-
-		return $member;
-	}
-
-	/**
 	 * Determine edit page capability based on the AD group a user is a member of if the
 	 * page has been restricted to specific AD groups. If the user is not a site, network,
 	 * or group admin, we need to check:
