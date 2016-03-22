@@ -474,19 +474,40 @@ class WSUWP_Content_Visibility {
 	public function ajax_search_editor_groups() {
 		check_ajax_referer( 'wsu-sso-ad-groups' );
 
-		$ad_group = sanitize_text_field( $_POST['ad_group'] );
-		$ad_groups = (array) get_post_meta( absint( $_POST['post_id'] ), '_ad_editor_groups', true );
+		$search_text = sanitize_text_field( $_POST['ad_group'] );
 
-		if ( empty( $ad_group ) ) {
-			wp_send_json_error( 'Empty AD group was passed.' );
+		if ( empty( $search_text ) ) {
+			wp_send_json_error( 'Empty search text was submitted.' );
 		}
 
-		$groups = wp_cache_get( md5( $ad_group ), 'wsuwp-ad-search' );
+		if ( 1 === mb_strlen( $search_text ) ) {
+			wp_send_json_error( 'Please provide more than one character.' );
+		}
+
+		$post_id = absint( $_POST['post_id'] );
+
+		if ( 0 === $post_id ) {
+			$current_groups = array();
+		} else {
+			$current_groups = get_post_meta( $post_id, '_ad_editor_groups', true );
+		}
+
+		$groups = wp_cache_get( md5( $search_text ), 'wsuwp-ad-search' );
 
 		if ( ! $groups ) {
-			$groups = $this->search_groups( $ad_group );
+			/**
+			 * Filter the editor groups attached to a search term.
+			 *
+			 * @since 0.2.0
+			 *
+			 * @param array  $groups      Group result data.
+			 * @param string $search_text Text used to search for a group.
+			 * @param int     $post_id     ID of the post being edited.
+			 */
+			$groups = apply_filters( 'content_visibility_editor_groups_search', $groups, $search_text, $post_id );
+
 			// Cache AD group search results for 10 minutes.
-			wp_cache_add( md5( $ad_group ), $groups, 'wsuwp-ad-search', 600 );
+			wp_cache_add( md5( $search_text ), $groups, 'wsuwp-ad-search', 600 );
 		}
 
 		$return_groups = array();
@@ -497,7 +518,7 @@ class WSUWP_Content_Visibility {
 				unset( $group['member']['count'] );
 				$group['member'] = array_map( array( $this, 'clean_members' ), $group['member'] );
 				$group['display_name'] = $group['name'][0];
-				$group['selected_class'] = in_array( $group['dn'], $ad_groups, true ) ? 'ad-group-selected' : '';
+				$group['selected_class'] = in_array( $group['dn'], $current_groups, true ) ? 'ad-group-selected' : '';
 
 				wp_cache_add( md5( $group['dn'] ), $group, 'wsuwp-ad', 1200 );
 
