@@ -511,19 +511,11 @@ class WSUWP_Content_Visibility {
 		}
 
 		$return_groups = array();
-		// Only return groups that have members.
+
 		foreach ( $groups as $group ) {
-			if ( isset( $group['member'] ) ) {
-				$group['member_count'] = $group['member']['count'];
-				unset( $group['member']['count'] );
-				$group['member'] = array_map( array( $this, 'clean_members' ), $group['member'] );
-				$group['display_name'] = $group['name'][0];
-				$group['selected_class'] = in_array( $group['dn'], $current_groups, true ) ? 'ad-group-selected' : '';
+			$group['selected_class'] = in_array( $group['id'], (array) $current_groups, true ) ? 'ad-group-selected' : '';
 
-				wp_cache_add( md5( $group['dn'] ), $group, 'wsuwp-ad', 1200 );
-
-				$return_groups[] = $group;
-			}
+			$return_groups[] = $group;
 		}
 
 		echo wp_json_encode( $return_groups );
