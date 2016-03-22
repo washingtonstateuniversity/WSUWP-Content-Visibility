@@ -445,13 +445,13 @@ class WSUWP_Content_Visibility {
 			/**
 			 * Filter the groups attached to a search term.
 			 *
-			 * @since 0.1.0
+			 * @since 0.2.0
 			 *
 			 * @param array  $groups      Group result data.
 			 * @param string $search_text Text used to search for a group.
 			 * @param int     $post_id     ID of the post being edited.
 			 */
-			$groups = apply_filters( 'content_visibility_group_search', $groups, $search_text, $post_id );
+			$groups = apply_filters( 'content_visibility_viewer_groups_search', $groups, $search_text, $post_id );
 
 			// Cache a search term's results for an hour.
 			wp_cache_add( md5( $search_text ), $groups, 'content-visibility', 3600 );
