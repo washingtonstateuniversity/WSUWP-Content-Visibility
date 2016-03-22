@@ -1,6 +1,5 @@
 <?php
 
-
 class WSUWP_Content_Visibility {
 	/**
 	 * @var WSUWP_Content_Visibility
@@ -30,13 +29,20 @@ class WSUWP_Content_Visibility {
 	 */
 	public function setup_hooks() {
 		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
+
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
+		add_filter( 'user_has_cap', array( $this, 'ad_groups_edit_page' ), 10, 4 );
+
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
-		add_action( 'wp_ajax_get_content_visibility_groups', array( $this, 'ajax_get_groups' ) );
-		add_action( 'wp_ajax_set_content_visibility_groups', array( $this, 'ajax_set_groups' ) );
-		add_action( 'wp_ajax_search_content_visibility_groups', array( $this, 'ajax_search_groups' ) );
+		add_action( 'wp_ajax_get_content_visibility_groups', array( $this, 'ajax_get_viewer_groups' ) );
+		add_action( 'wp_ajax_set_content_visibility_groups', array( $this, 'ajax_set_viewer_groups' ) );
+		add_action( 'wp_ajax_search_content_visibility_groups', array( $this, 'ajax_search_viewer_groups' ) );
+
+		add_action( 'wp_ajax_wsuwp_ad_group_check', array( $this, 'ajax_get_editor_groups' ) );
+		add_action( 'wp_ajax_wsuwp_ad_group_save', array( $this, 'ajax_set_editor_groups' ) );
+		add_action( 'wp_ajax_wsuwp_get_ad_groups', array( $this, 'ajax_search_editor_groups' ) );
 	}
 
 	/**
@@ -116,6 +122,8 @@ class WSUWP_Content_Visibility {
 
 	/**
 	 * Add the meta boxes created by the plugin to supporting post types.
+	 * 
+	 * @todo capability checks
 	 *
 	 * @since 0.1.0
 	 *
@@ -124,6 +132,10 @@ class WSUWP_Content_Visibility {
 	public function add_meta_boxes( $post_type ) {
 		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) ) {
 			add_meta_box( 'wsuwp-content-visibility', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
+		}
+
+		if ( post_type_supports( $post_type, 'wsuwp-content-editors' ) ) {
+			add_meta_box( 'wsuwp-sso-ad-group', 'Editor Groups', array( $this, 'display_group_visibility_meta_box' ), null, 'side', 'high' );
 		}
 	}
 
@@ -184,7 +196,63 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
+	 * Display the meta box used to search for an AD group.
+	 *
+	 * @param WP_Post $post The current post being edited.
+	 */
+	public function display_group_visibility_meta_box( $post ) {
+		?>
+		<p class="description">Groups from Active Directory with editor access to this page.</p>
+		<input type="button" id="wsu-group-manage" class="primary button" value="Manage Groups" />
+		<div class="ad-group-overlay">
+			<div class="ad-group-overlay-wrapper">
+				<div class="ad-group-overlay-header">
+					<div class="ad-group-overlay-title">
+						<h3>Manage Active Directory Editor Groups</h3>
+					</div>
+					<div class="ad-group-overlay-close">Close</div>
+				</div>
+				<div class="ad-group-overlay-body">
+					<div class="ad-group-search-area">
+						<input type="text" id="wsu-group-visibility" name="wsu_group_visibility" class="widefat" />
+						<input type="button" id="wsu-group-search" class="button button-primary button-large" value="Find" />
+					</div>
+					<div class="ad-save-cancel">
+						<input type="button" id="wsu-save-groups" class="button button-primary button-large" value="Save" />
+						<input type="button" id="wsu-cancel-groups" class="button button-secondary button-large" value="Cancel" />
+					</div>
+					<div id="ad-current-group-list" class="ad-group-list ad-group-list-open">
+						<div id="ad-current-group-tab" class="ad-group-tab ad-current-tab">Currently Assigned</div>
+						<div class="ad-group-results"></div>
+					</div>
+					<div id="ad-find-group-list" class="ad-group-list">
+						<div id="ad-find-group-tab" class="ad-group-tab">Group Results</div>
+						<div class="ad-group-results"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="clear"></div>
+		<script type="text/template" id="ad-group-template">
+			<div class="ad-group-single">
+				<div class="ad-group-select <%= selectedClass %>" data-group-id="<%= groupID %>"></div>
+				<div class="ad-group-name"><%= groupName %></div>
+				<div class="ad-group-member-count">(<%= memberCount %> members)</div>
+				<ul class="ad-group-members">
+					<% for(var member in memberList) { %>
+					<li><%= memberList[member] %></li>
+					<% } %>
+				</ul>
+				<div class="clear"></div>
+			</div>
+		</script>
+		<?php
+	}
+
+	/**
 	 * Enqueue Javascript required in the admin on support post type screens.
+	 *
+	 * @todo capabilities
 	 *
 	 * @since 0.1.0
 	 */
@@ -201,6 +269,15 @@ class WSUWP_Content_Visibility {
 
 		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups', $data );
 		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups_nonce', $ajax_nonce );
+
+		wp_enqueue_style( 'wsuwp-ad-style', plugins_url( 'css/admin-style.min.css', __FILE__ ), array(), $this->script_version );
+		wp_enqueue_script( 'wsuwp-ad-group-view', plugins_url( 'js/ad-group-visibility.min.js', __FILE__ ), array( 'backbone' ), $this->script_version, true );
+
+		$data = get_post_meta( get_the_ID(), '_ad_editor_groups', true );
+		$ajax_nonce = wp_create_nonce( 'wsu-sso-ad-groups' );
+
+		wp_localize_script( 'wsuwp-ad-group-view', 'wsuADGroups', $data );
+		wp_localize_script( 'wsuwp-ad-group-view', 'wsuADGroups_nonce', $ajax_nonce );
 	}
 
 	/**
@@ -329,5 +406,206 @@ class WSUWP_Content_Visibility {
 		}
 
 		wp_send_json_success( $return_groups );
+	}
+
+
+	/**
+	 * Handle AJAX requests for the AD groups attached to an individual post.
+	 */
+	public function ajax_get_ad_groups() {
+		check_ajax_referer( 'wsu-sso-ad-groups' );
+
+		$post_id = absint( $_POST['post_id'] );
+		$ad_groups = (array) get_post_meta( $post_id, '_ad_editor_groups', true );
+
+		$return_groups = array();
+
+		foreach ( $ad_groups as $group ) {
+			$this_group = array();
+
+			// We may have a cached record of the AD group containing more detailed information.
+			// If not, we just use the DN for both DN and display name.
+			if ( $cached_group = wp_cache_get( md5( $group ), 'wsuwp-ad' ) ) {
+				$this_group = $cached_group;
+			} else {
+				$this_group['dn'] = $group;
+				$this_group['display_name'] = $group;
+			}
+
+			$this_group['selected_class'] = 'ad-group-selected';
+			$return_groups[] = $this_group;
+		}
+
+		echo wp_json_encode( $return_groups );
+		die();
+	}
+
+	/**
+	 * Search Active Directory for a list of groups matching a POSTed request.
+	 */
+	public function ajax_ad_group_check() {
+		check_ajax_referer( 'wsu-sso-ad-groups' );
+
+		$ad_group = sanitize_text_field( $_POST['ad_group'] );
+		$ad_groups = (array) get_post_meta( absint( $_POST['post_id'] ), '_ad_editor_groups', true );
+
+		if ( empty( $ad_group ) ) {
+			wp_send_json_error( 'Empty AD group was passed.' );
+		}
+
+		$groups = wp_cache_get( md5( $ad_group ), 'wsuwp-ad-search' );
+		if ( ! $groups ) {
+			$groups = $this->search_groups( $ad_group );
+			// Cache AD group search results for 10 minutes.
+			wp_cache_add( md5( $ad_group ), $groups, 'wsuwp-ad-search', 600 );
+		}
+
+		$return_groups = array();
+		// Only return groups that have members.
+		foreach ( $groups as $group ) {
+			if ( isset( $group['member'] ) ) {
+				$group['member_count'] = $group['member']['count'];
+				unset( $group['member']['count'] );
+				$group['member'] = array_map( array( $this, 'clean_members' ), $group['member'] );
+				$group['display_name'] = $group['name'][0];
+				$group['selected_class'] = in_array( $group['dn'], $ad_groups, true ) ? 'ad-group-selected' : '';
+
+				wp_cache_add( md5( $group['dn'] ), $group, 'wsuwp-ad', 1200 );
+
+				$return_groups[] = $group;
+			}
+		}
+
+		echo wp_json_encode( $return_groups );
+		die();
+	}
+
+	/**
+	 * Clean an AD member string so that only a CN is returned, not the entire result.
+	 *
+	 * @param string $member
+	 *
+	 * @return string
+	 */
+	public function clean_members( $member ) {
+		$member = array_shift( explode( ',', $member ) );
+		$member = array_pop( explode( '=', $member ) );
+
+		return $member;
+	}
+
+	/**
+	 * Handle an AJAX request to save a list of AD groups to a post.
+	 */
+	public function ajax_ad_group_save() {
+		check_ajax_referer( 'wsu-sso-ad-groups' );
+
+		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
+			wp_send_json_error( 'Invalid post ID.' );
+		}
+
+		if ( ! isset( $_POST['ad_groups'] ) || empty( $_POST['ad_groups'] ) ) {
+			wp_send_json_success( 'No groups passed. Success.' );
+		}
+
+		$post_id = absint( $_POST['post_id'] );
+		$ad_groups = array_filter( $_POST['ad_groups'], 'sanitize_text_field' );
+
+		update_post_meta( $post_id, '_ad_editor_groups', $ad_groups );
+
+		wp_send_json_success( 'Groups saved.' );
+	}
+
+
+	/**
+	 * Determine edit page capability based on the AD group a user is a member of if the
+	 * page has been restricted to specific AD groups. If the user is not a site, network,
+	 * or group admin, we need to check:
+	 *
+	 *     - edit_post, which has meta caps edit_others_pages and edit_published pages
+	 *     - edit_page, which has meta caps edit_others_pages and edit_published pages
+	 *     - publish_pages
+	 *     - edit_others_pages is also checked on its own.
+	 *
+	 * @param array $allcaps All current capabilities assigned to the user.
+	 * @param array $caps
+	 * @param array $args    Additional capabilities being checked.
+	 * @param WP_User $user  The current user being checked.
+	 *
+	 * @return array Modified list of capabilities assigned to the user.
+	 */
+	public function ad_groups_edit_page( $allcaps, $caps, $args, $user ) {
+		// Catch current administrators and editors.
+		$user_can_create_pages = array_intersect( array( 'administrator', 'editor' ), $user->roles );
+
+		/*
+		 * Administrators and Editors can still create new pages, but we need
+		 * to ensure that others with individual page access cannot create
+		 * new pages themselves.
+		 */
+		if ( 'create_pages' === $args[0] ) {
+			if ( ! empty( $user_can_create_pages ) ) {
+				$allcaps['create_pages'] = true;
+			}
+			return $allcaps;
+		}
+
+		/**
+		 * We're a little crazy, so we'll give everyone with a role on the site
+		 * access to the pages menu. Really the individual page cap checks should
+		 * take care of this and it ends up being a list of pages on the site for
+		 * most users.
+		 */
+		if ( 'edit_pages' === $args[0] ) {
+			$allcaps['edit_pages'] = true;
+			return $allcaps;
+		}
+
+		/**
+		 * And now we check for individual page capabilities for anyone that is not an
+		 * Administrator or Editor on the site. This doesn't work for Subscribers, only
+		 * Contributors and Authors.
+		 */
+		if ( $user && empty( $user_can_create_pages ) && in_array( $args[0], array( 'edit_post', 'edit_page', 'publish_pages', 'edit_others_pages' ), true ) ) {
+			$post = get_post();
+
+			// We need a valid page before we can assign capabilities.
+			if ( ! $post ) {
+				return $allcaps;
+			}
+
+			// Retrieve the array of AD groups assigned to the current page.
+			$page_ad_groups = get_post_meta( $post->ID, '_ad_editor_groups', true );
+
+			// No additional AD groups have been assigned, return unaltered.
+			if ( empty( $page_ad_groups ) ) {
+				return $allcaps;
+			}
+
+			// The user must be an AD user for this to work.
+			$user_type = get_user_meta( $user->ID, '_wsuwp_sso_user_type', true );
+			if ( 'nid' !== $user_type ) {
+				return $allcaps;
+			}
+
+			// Retrieve the array of AD groups assigned to the user.
+			$user_ad_groups = $this->get_user_ad_groups( $user );
+			$groups = array_intersect( $page_ad_groups, $user_ad_groups );
+
+			// No access if no intersection between the allowed groups and the user's groups.
+			if ( empty( $groups ) ) {
+				return $allcaps;
+			}
+
+			$allcaps['edit_post'] = true;
+			$allcaps['edit_page'] = true;
+			$allcaps['publish_pages'] = true;
+			$allcaps['edit_others_pages'] = true;
+			$allcaps['edit_published_pages'] = true;
+
+			return $allcaps;
+		}
+
+		return $allcaps;
 	}
 }
