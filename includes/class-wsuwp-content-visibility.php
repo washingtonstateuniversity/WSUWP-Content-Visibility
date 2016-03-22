@@ -266,8 +266,8 @@ class WSUWP_Content_Visibility {
 			return;
 		}
 
-		wp_enqueue_style( 'wsuwp-content-visibility', plugins_url( 'css/admin-style.min.css', __FILE__ ), array(), false );
-		wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', __FILE__ ), array( 'backbone' ), false, true );
+		wp_enqueue_style( 'wsuwp-content-visibility', plugins_url( 'css/admin-style.min.css', dirname( __FILE__ ) ), array(), false );
+		wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
 
 		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
 		$ajax_nonce = wp_create_nonce( 'wsu-visibility-groups' );
@@ -275,14 +275,11 @@ class WSUWP_Content_Visibility {
 		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups', $data );
 		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups_nonce', $ajax_nonce );
 
-		wp_enqueue_style( 'wsuwp-ad-style', plugins_url( 'css/admin-style.min.css', __FILE__ ), array(), $this->script_version );
-		wp_enqueue_script( 'wsuwp-ad-group-view', plugins_url( 'js/ad-group-visibility.min.js', __FILE__ ), array( 'backbone' ), $this->script_version, true );
-
 		$data = get_post_meta( get_the_ID(), '_ad_editor_groups', true );
 		$ajax_nonce = wp_create_nonce( 'wsu-sso-ad-groups' );
 
-		wp_localize_script( 'wsuwp-ad-group-view', 'wsuADGroups', $data );
-		wp_localize_script( 'wsuwp-ad-group-view', 'wsuADGroups_nonce', $ajax_nonce );
+		wp_localize_script( 'wsuwp-content-visibility', 'wsuADGroups', $data );
+		wp_localize_script( 'wsuwp-content-visibility', 'wsuADGroups_nonce', $ajax_nonce );
 	}
 
 	/**
