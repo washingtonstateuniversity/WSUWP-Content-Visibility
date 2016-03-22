@@ -14,7 +14,12 @@ WSU Content Visibility provides a general method to control visibility of a priv
 
 ## Post Type Support
 
-If you'd like to add support for WSU Content Visibility to another post type, use `add_post_type_support( 'post', 'wsuwp-content-visibility' );`.
+There are two levels of support to add for post types.
+
+* Use `add_post_type_support( 'post-type-slug', 'wsuwp-content-viewers' );` to add support for the management of users that can **view** content.
+* Use `add_post_type_support( 'post-type-slug', 'wsuwp-content-editors' );` to add support for the management of users that can **edit** content.
+
+Similarly, `remove_post_type_support()` can be used to remove existing support for a feature on a post type. We apply support on `init` with a priority of `10`.
 
 ## Group Search
 

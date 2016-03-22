@@ -56,8 +56,10 @@ class WSUWP_Content_Visibility {
 	 * @since 0.1.0
 	 */
 	public function add_post_type_support() {
-		add_post_type_support( 'post', 'wsuwp-content-visibility' );
-		add_post_type_support( 'page', 'wsuwp-content-visibility' );
+		add_post_type_support( 'post', 'wsuwp-content-viewers' );
+		add_post_type_support( 'page', 'wsuwp-content-viewers' );
+		add_post_type_support( 'post', 'wsuwp-content-editors' );
+		add_post_type_support( 'page', 'wsuwp-content-editors' );
 	}
 
 	/**
@@ -135,7 +137,7 @@ class WSUWP_Content_Visibility {
 	 * @param string  $post_type The slug of the current post type being edited.
 	 */
 	public function add_meta_boxes( $post_type ) {
-		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) ) {
+		if ( post_type_supports( $post_type, 'wsuwp-content-viewers' ) ) {
 			add_meta_box( 'wsuwp-content-visibility', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
 		}
 
@@ -262,7 +264,10 @@ class WSUWP_Content_Visibility {
 	 * @since 0.1.0
 	 */
 	public function admin_enqueue_scripts() {
-		if ( ! isset( get_current_screen()->post_type ) || ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-visibility' ) ) {
+		if ( ! isset( get_current_screen()->post_type ) ) {
+			return;
+		}
+		if ( ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-viewers' ) && ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-editors' ) ) {
 			return;
 		}
 
