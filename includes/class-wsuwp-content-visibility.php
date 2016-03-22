@@ -596,7 +596,8 @@ class WSUWP_Content_Visibility {
 			}
 
 			// Retrieve the array of AD groups assigned to the user.
-			$user_ad_groups = $this->get_user_ad_groups( $user );
+			// @todo fix this whole area to be in WSUWP SSO
+			$user_ad_groups = WSUWP_SSO_Authentication()->get_user_ad_groups( $user );
 			$groups = array_intersect( $page_ad_groups, $user_ad_groups );
 
 			// No access if no intersection between the allowed groups and the user's groups.
