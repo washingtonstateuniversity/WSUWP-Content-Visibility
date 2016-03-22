@@ -336,6 +336,37 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
+	 * Handle AJAX requests for the AD groups attached to an individual post.
+	 */
+	public function ajax_get_editor_groups() {
+		check_ajax_referer( 'wsu-sso-ad-groups' );
+
+		$post_id = absint( $_POST['post_id'] );
+		$ad_groups = (array) get_post_meta( $post_id, '_ad_editor_groups', true );
+
+		$return_groups = array();
+
+		foreach ( $ad_groups as $group ) {
+			$this_group = array();
+
+			// We may have a cached record of the AD group containing more detailed information.
+			// If not, we just use the DN for both DN and display name.
+			if ( $cached_group = wp_cache_get( md5( $group ), 'wsuwp-ad' ) ) {
+				$this_group = $cached_group;
+			} else {
+				$this_group['dn'] = $group;
+				$this_group['display_name'] = $group;
+			}
+
+			$this_group['selected_class'] = 'ad-group-selected';
+			$return_groups[] = $this_group;
+		}
+
+		echo wp_json_encode( $return_groups );
+		die();
+	}
+
+	/**
 	 * Save any changes made to a list of visibility groups assigned to a post.
 	 *
 	 * @since 0.1.0
@@ -357,6 +388,28 @@ class WSUWP_Content_Visibility {
 		update_post_meta( $post_id, '_content_visibility_groups', $group_ids );
 
 		wp_send_json_success( 'Changes saved.' );
+	}
+
+	/**
+	 * Handle an AJAX request to save a list of AD groups to a post.
+	 */
+	public function ajax_set_editor_groups() {
+		check_ajax_referer( 'wsu-sso-ad-groups' );
+
+		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
+			wp_send_json_error( 'Invalid post ID.' );
+		}
+
+		if ( ! isset( $_POST['ad_groups'] ) || empty( $_POST['ad_groups'] ) ) {
+			wp_send_json_success( 'No groups passed. Success.' );
+		}
+
+		$post_id = absint( $_POST['post_id'] );
+		$ad_groups = array_filter( $_POST['ad_groups'], 'sanitize_text_field' );
+
+		update_post_meta( $post_id, '_ad_editor_groups', $ad_groups );
+
+		wp_send_json_success( 'Groups saved.' );
 	}
 
 	/**
@@ -415,38 +468,6 @@ class WSUWP_Content_Visibility {
 		wp_send_json_success( $return_groups );
 	}
 
-
-	/**
-	 * Handle AJAX requests for the AD groups attached to an individual post.
-	 */
-	public function ajax_get_editor_groups() {
-		check_ajax_referer( 'wsu-sso-ad-groups' );
-
-		$post_id = absint( $_POST['post_id'] );
-		$ad_groups = (array) get_post_meta( $post_id, '_ad_editor_groups', true );
-
-		$return_groups = array();
-
-		foreach ( $ad_groups as $group ) {
-			$this_group = array();
-
-			// We may have a cached record of the AD group containing more detailed information.
-			// If not, we just use the DN for both DN and display name.
-			if ( $cached_group = wp_cache_get( md5( $group ), 'wsuwp-ad' ) ) {
-				$this_group = $cached_group;
-			} else {
-				$this_group['dn'] = $group;
-				$this_group['display_name'] = $group;
-			}
-
-			$this_group['selected_class'] = 'ad-group-selected';
-			$return_groups[] = $this_group;
-		}
-
-		echo wp_json_encode( $return_groups );
-		die();
-	}
-
 	/**
 	 * Search Active Directory for a list of groups matching a POSTed request.
 	 */
@@ -461,6 +482,7 @@ class WSUWP_Content_Visibility {
 		}
 
 		$groups = wp_cache_get( md5( $ad_group ), 'wsuwp-ad-search' );
+
 		if ( ! $groups ) {
 			$groups = $this->search_groups( $ad_group );
 			// Cache AD group search results for 10 minutes.
@@ -500,29 +522,6 @@ class WSUWP_Content_Visibility {
 
 		return $member;
 	}
-
-	/**
-	 * Handle an AJAX request to save a list of AD groups to a post.
-	 */
-	public function ajax_set_editor_groups() {
-		check_ajax_referer( 'wsu-sso-ad-groups' );
-
-		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
-			wp_send_json_error( 'Invalid post ID.' );
-		}
-
-		if ( ! isset( $_POST['ad_groups'] ) || empty( $_POST['ad_groups'] ) ) {
-			wp_send_json_success( 'No groups passed. Success.' );
-		}
-
-		$post_id = absint( $_POST['post_id'] );
-		$ad_groups = array_filter( $_POST['ad_groups'], 'sanitize_text_field' );
-
-		update_post_meta( $post_id, '_ad_editor_groups', $ad_groups );
-
-		wp_send_json_success( 'Groups saved.' );
-	}
-
 
 	/**
 	 * Determine edit page capability based on the AD group a user is a member of if the
