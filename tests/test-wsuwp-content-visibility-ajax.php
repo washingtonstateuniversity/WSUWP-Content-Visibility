@@ -305,7 +305,7 @@ class Test_WSUWP_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 		$_POST['post_id'] = $post_id;
 		$_POST['visibility_group'] = 'test';
 
-		add_filter( 'content_visibility_group_search', array( $this, 'filter_group_search' ), 10, 2 );
+		add_filter( 'content_visibility_viewer_groups_search', array( $this, 'filter_group_search' ), 10, 2 );
 
 		try {
 			$this->_handleAjax( 'search_content_visibility_groups' );
@@ -337,7 +337,7 @@ class Test_WSUWP_Content_Visibility_Ajax extends WP_Ajax_UnitTestCase {
 			),
 		);
 
-		remove_filter( 'content_visibility_group_search', array( $this, 'filter_group_search' ), 10 );
+		remove_filter( 'content_visibility_viewer_groups_search', array( $this, 'filter_group_search' ), 10 );
 
 		$this->assertEquals( $expected_response, $response );
 	}
