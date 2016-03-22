@@ -127,6 +127,100 @@ class WSUWP_Content_Visibility {
 		return $caps;
 	}
 
+
+	/**
+	 * Determine edit page capability based on the AD group a user is a member of if the
+	 * page has been restricted to specific AD groups. If the user is not a site, network,
+	 * or group admin, we need to check:
+	 *
+	 *     - edit_post, which has meta caps edit_others_pages and edit_published pages
+	 *     - edit_page, which has meta caps edit_others_pages and edit_published pages
+	 *     - publish_pages
+	 *     - edit_others_pages is also checked on its own.
+	 *
+	 * @param array $allcaps All current capabilities assigned to the user.
+	 * @param array $caps
+	 * @param array $args    Additional capabilities being checked.
+	 * @param WP_User $user  The current user being checked.
+	 *
+	 * @return array Modified list of capabilities assigned to the user.
+	 */
+	public function ad_groups_edit_page( $allcaps, $caps, $args, $user ) {
+		// Catch current administrators and editors.
+		$user_can_create_pages = array_intersect( array( 'administrator', 'editor' ), $user->roles );
+
+		/*
+		 * Administrators and Editors can still create new pages, but we need
+		 * to ensure that others with individual page access cannot create
+		 * new pages themselves.
+		 */
+		if ( 'create_pages' === $args[0] ) {
+			if ( ! empty( $user_can_create_pages ) ) {
+				$allcaps['create_pages'] = true;
+			}
+			return $allcaps;
+		}
+
+		/**
+		 * We're a little crazy, so we'll give everyone with a role on the site
+		 * access to the pages menu. Really the individual page cap checks should
+		 * take care of this and it ends up being a list of pages on the site for
+		 * most users.
+		 */
+		if ( 'edit_pages' === $args[0] ) {
+			$allcaps['edit_pages'] = true;
+			return $allcaps;
+		}
+
+		/**
+		 * And now we check for individual page capabilities for anyone that is not an
+		 * Administrator or Editor on the site. This doesn't work for Subscribers, only
+		 * Contributors and Authors.
+		 */
+		if ( $user && empty( $user_can_create_pages ) && in_array( $args[0], array( 'edit_post', 'edit_page', 'publish_pages', 'edit_others_pages' ), true ) ) {
+			$post = get_post();
+
+			// We need a valid page before we can assign capabilities.
+			if ( ! $post ) {
+				return $allcaps;
+			}
+
+			// Retrieve the array of AD groups assigned to the current page.
+			$page_ad_groups = get_post_meta( $post->ID, '_ad_editor_groups', true );
+
+			// No additional AD groups have been assigned, return unaltered.
+			if ( empty( $page_ad_groups ) ) {
+				return $allcaps;
+			}
+
+			// The user must be an AD user for this to work.
+			$user_type = get_user_meta( $user->ID, '_wsuwp_sso_user_type', true );
+			if ( 'nid' !== $user_type ) {
+				return $allcaps;
+			}
+
+			// Retrieve the array of AD groups assigned to the user.
+			// @todo fix this whole area to be in WSUWP SSO
+			$user_ad_groups = WSUWP_SSO_Authentication()->get_user_ad_groups( $user );
+			$groups = array_intersect( $page_ad_groups, $user_ad_groups );
+
+			// No access if no intersection between the allowed groups and the user's groups.
+			if ( empty( $groups ) ) {
+				return $allcaps;
+			}
+
+			$allcaps['edit_post'] = true;
+			$allcaps['edit_page'] = true;
+			$allcaps['publish_pages'] = true;
+			$allcaps['edit_others_pages'] = true;
+			$allcaps['edit_published_pages'] = true;
+
+			return $allcaps;
+		}
+
+		return $allcaps;
+	}
+
 	/**
 	 * Add the meta boxes created by the plugin to supporting post types.
 	 *
@@ -520,98 +614,5 @@ class WSUWP_Content_Visibility {
 
 		echo wp_json_encode( $return_groups );
 		die();
-	}
-
-	/**
-	 * Determine edit page capability based on the AD group a user is a member of if the
-	 * page has been restricted to specific AD groups. If the user is not a site, network,
-	 * or group admin, we need to check:
-	 *
-	 *     - edit_post, which has meta caps edit_others_pages and edit_published pages
-	 *     - edit_page, which has meta caps edit_others_pages and edit_published pages
-	 *     - publish_pages
-	 *     - edit_others_pages is also checked on its own.
-	 *
-	 * @param array $allcaps All current capabilities assigned to the user.
-	 * @param array $caps
-	 * @param array $args    Additional capabilities being checked.
-	 * @param WP_User $user  The current user being checked.
-	 *
-	 * @return array Modified list of capabilities assigned to the user.
-	 */
-	public function ad_groups_edit_page( $allcaps, $caps, $args, $user ) {
-		// Catch current administrators and editors.
-		$user_can_create_pages = array_intersect( array( 'administrator', 'editor' ), $user->roles );
-
-		/*
-		 * Administrators and Editors can still create new pages, but we need
-		 * to ensure that others with individual page access cannot create
-		 * new pages themselves.
-		 */
-		if ( 'create_pages' === $args[0] ) {
-			if ( ! empty( $user_can_create_pages ) ) {
-				$allcaps['create_pages'] = true;
-			}
-			return $allcaps;
-		}
-
-		/**
-		 * We're a little crazy, so we'll give everyone with a role on the site
-		 * access to the pages menu. Really the individual page cap checks should
-		 * take care of this and it ends up being a list of pages on the site for
-		 * most users.
-		 */
-		if ( 'edit_pages' === $args[0] ) {
-			$allcaps['edit_pages'] = true;
-			return $allcaps;
-		}
-
-		/**
-		 * And now we check for individual page capabilities for anyone that is not an
-		 * Administrator or Editor on the site. This doesn't work for Subscribers, only
-		 * Contributors and Authors.
-		 */
-		if ( $user && empty( $user_can_create_pages ) && in_array( $args[0], array( 'edit_post', 'edit_page', 'publish_pages', 'edit_others_pages' ), true ) ) {
-			$post = get_post();
-
-			// We need a valid page before we can assign capabilities.
-			if ( ! $post ) {
-				return $allcaps;
-			}
-
-			// Retrieve the array of AD groups assigned to the current page.
-			$page_ad_groups = get_post_meta( $post->ID, '_ad_editor_groups', true );
-
-			// No additional AD groups have been assigned, return unaltered.
-			if ( empty( $page_ad_groups ) ) {
-				return $allcaps;
-			}
-
-			// The user must be an AD user for this to work.
-			$user_type = get_user_meta( $user->ID, '_wsuwp_sso_user_type', true );
-			if ( 'nid' !== $user_type ) {
-				return $allcaps;
-			}
-
-			// Retrieve the array of AD groups assigned to the user.
-			// @todo fix this whole area to be in WSUWP SSO
-			$user_ad_groups = WSUWP_SSO_Authentication()->get_user_ad_groups( $user );
-			$groups = array_intersect( $page_ad_groups, $user_ad_groups );
-
-			// No access if no intersection between the allowed groups and the user's groups.
-			if ( empty( $groups ) ) {
-				return $allcaps;
-			}
-
-			$allcaps['edit_post'] = true;
-			$allcaps['edit_page'] = true;
-			$allcaps['publish_pages'] = true;
-			$allcaps['edit_others_pages'] = true;
-			$allcaps['edit_published_pages'] = true;
-
-			return $allcaps;
-		}
-
-		return $allcaps;
 	}
 }
