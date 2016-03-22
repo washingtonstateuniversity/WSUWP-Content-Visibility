@@ -122,7 +122,7 @@ class WSUWP_Content_Visibility {
 
 	/**
 	 * Add the meta boxes created by the plugin to supporting post types.
-	 * 
+	 *
 	 * @todo capability checks
 	 *
 	 * @since 0.1.0
