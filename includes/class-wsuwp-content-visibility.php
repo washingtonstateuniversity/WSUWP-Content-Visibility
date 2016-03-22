@@ -293,7 +293,7 @@ class WSUWP_Content_Visibility {
 	 *
 	 * @since 0.1.0
 	 */
-	public function ajax_get_groups() {
+	public function ajax_get_viewer_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
 		$post_id = absint( $_POST['post_id'] );
@@ -340,7 +340,7 @@ class WSUWP_Content_Visibility {
 	 *
 	 * @since 0.1.0
 	 */
-	public function ajax_set_groups() {
+	public function ajax_set_viewer_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
 		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
@@ -364,7 +364,7 @@ class WSUWP_Content_Visibility {
 	 *
 	 * @since 0.1.0
 	 */
-	public function ajax_search_groups() {
+	public function ajax_search_viewer_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
 		$search_text = sanitize_text_field( $_POST['visibility_group'] );
@@ -419,7 +419,7 @@ class WSUWP_Content_Visibility {
 	/**
 	 * Handle AJAX requests for the AD groups attached to an individual post.
 	 */
-	public function ajax_get_ad_groups() {
+	public function ajax_get_editor_groups() {
 		check_ajax_referer( 'wsu-sso-ad-groups' );
 
 		$post_id = absint( $_POST['post_id'] );
@@ -450,7 +450,7 @@ class WSUWP_Content_Visibility {
 	/**
 	 * Search Active Directory for a list of groups matching a POSTed request.
 	 */
-	public function ajax_ad_group_check() {
+	public function ajax_search_editor_groups() {
 		check_ajax_referer( 'wsu-sso-ad-groups' );
 
 		$ad_group = sanitize_text_field( $_POST['ad_group'] );
@@ -504,7 +504,7 @@ class WSUWP_Content_Visibility {
 	/**
 	 * Handle an AJAX request to save a list of AD groups to a post.
 	 */
-	public function ajax_ad_group_save() {
+	public function ajax_set_editor_groups() {
 		check_ajax_referer( 'wsu-sso-ad-groups' );
 
 		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
