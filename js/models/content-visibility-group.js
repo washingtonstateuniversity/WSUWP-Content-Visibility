@@ -1,4 +1,4 @@
-/* global Backbone, jQuery, _ */
+/* global Backbone, _ */
 var wsuContentViewers = wsuContentViewers || {};
 
 ( function( window, Backbone, $, _, wsuContentViewers ) {

@@ -1,4 +1,4 @@
-/* global Backbone, jQuery, _ */
+/* global Backbone, _, ajaxurl, wsuContentEditorGroups_nonce */
 var wsuContentEditors = wsuContentEditors || {};
 
 ( function( window, Backbone, $, _, wsuContentEditors ) {
@@ -186,7 +186,7 @@ var wsuContentEditors = wsuContentEditors || {};
          *
          * @param response
          */
-        saveGroupResponse: function( response ) {
+        saveGroupResponse: function() {
             wsuContentEditors.app.getCurrentGroups();
             wsuContentEditors.app.showCurrentList();
             wsuContentEditors.app.clearCurrentList();

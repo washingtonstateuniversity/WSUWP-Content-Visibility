@@ -1,4 +1,4 @@
-/* global Backbone, jQuery, _ */
+/* global Backbone, _, ajaxurl, wsuContentViewerGroups_nonce */
 var wsuContentViewers = wsuContentViewers || {};
 
 ( function( window, Backbone, $, _, wsuContentViewers ) {
@@ -231,13 +231,13 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * Check the response sent from the server after saving a new list of
 		 * groups. Once the response is verified, go back to the current list.
 		 *
-		 * @todo actually handle the response properly.
+		 * @todo actually handle the response parameter properly.
 		 *
 		 * @since 0.1.0
 		 *
 		 * @param response
 		 */
-		saveGroupResponse: function( response ) {
+		saveGroupResponse: function() {
 			wsuContentViewers.app.getCurrentGroups();
 			wsuContentViewers.app.showCurrentList();
 			wsuContentViewers.app.clearCurrentList();

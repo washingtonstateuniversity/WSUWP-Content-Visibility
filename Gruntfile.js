@@ -8,7 +8,24 @@ module.exports = function(grunt) {
 				preset: "jquery",
 				verbose: true,                                 // Display the rule name with the warning.
 				requireCamelCaseOrUpperCaseIdentifiers: false, // We rely on name_name too much to change them all.
-				maximumLineLength: 150,                        // temporary
+				maximumLineLength: 150                         // temporary
+			}
+		},
+
+		jshint: {
+			src: [ "js/models/*.js", "js/views/*.js", "js/content-visibility-app.js" ],
+			options: {
+				bitwise: true,
+				curly: true,
+				eqeqeq: true,
+				forin: true,
+				freeze: true,
+				noarg: true,
+				nonbsp: true,
+				undef: true,
+				unused: true,
+				browser: true, // Define globals exposed by modern browsers.
+				jquery: true   // Define globals exposed by jQuery.
 			}
 		},
 
@@ -78,6 +95,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-jscs');
 	grunt.loadNpmTasks('grunt-phpcs');
 

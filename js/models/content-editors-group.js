@@ -1,4 +1,4 @@
-/* global Backbone, jQuery, _ */
+/* global Backbone, _ */
 var wsuContentEditors = wsuContentEditors || {};
 
 ( function( window, Backbone, $, _, wsuContentEditors ) {
