@@ -1,28 +1,28 @@
 /* global Backbone, jQuery, _ */
 var wsuContentViewers = wsuContentViewers || {};
 
-( function ( window, Backbone, $, _, wsuContentViewers ) {
-	'use strict';
+( function( window, Backbone, $, _, wsuContentViewers ) {
+	"use strict";
 
-	wsuContentViewers.appView = Backbone.View.extend({
+	wsuContentViewers.appView = Backbone.View.extend( {
 
 		/**
 		 * Primary container to work with. We add this via meta box.
 		 */
-		el: '#wsuwp-content-viewers-box',
+		el: "#wsuwp-content-viewers-box",
 
 		/**
 		 * Setup the events we manage in this plugin.
 		 */
 		events: {
-			'click #visibility-group-manage': 'openGroupModal',
-			'click #visibility-group-search': 'searchGroups',
-			'click #visibility-save-groups': 'saveGroups',
-			'click #visibility-cancel-groups': 'cancelGroupSearch',
-			'click .visibility-group-overlay-close': 'closeGroups',
-			'click .visibility-group-single': 'toggleMemberList',
-			'click .visibility-group-select': 'toggleGroupSelection',
-			'keydown #visibility-search-term' : 'searchGroups'
+			"click #visibility-group-manage": "openGroupModal",
+			"click #visibility-group-search": "searchGroups",
+			"click #visibility-save-groups": "saveGroups",
+			"click #visibility-cancel-groups": "cancelGroupSearch",
+			"click .visibility-group-overlay-close": "closeGroups",
+			"click .visibility-group-single": "toggleMemberList",
+			"click .visibility-group-select": "toggleGroupSelection",
+			"keydown #visibility-search-term": "searchGroups"
 		},
 
 		/**
@@ -43,8 +43,9 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		initialize: function() {
+
 			// Convert the JSON object we receive from the document to an array.
-			this.groups = $.map(window.wsuContentViewerGroups, function(el) { return el; });
+			this.groups = $.map( window.wsuContentViewerGroups, function( el ) { return el; } );
 			this.groups_modified = this.groups;
 		},
 
@@ -61,7 +62,7 @@ var wsuContentViewers = wsuContentViewers || {};
 
 			view = new wsuContentViewers.groupView( { model: group } );
 
-			$('#visibility-' + area + '-group-list').find('.visibility-group-results').append( view.render().el );
+			$( "#visibility-" + area + "-group-list" ).find( ".visibility-group-results" ).append( view.render().el );
 		},
 
 		/**
@@ -82,19 +83,20 @@ var wsuContentViewers = wsuContentViewers || {};
 		 */
 		getCurrentGroups: function() {
 			var data = {
-				'action': 'get_content_visibility_groups',
-				'_ajax_nonce' : wsuContentViewerGroups_nonce,
-				'post_id': $('#post_ID').val()
+				"action": "get_content_visibility_groups",
+				"_ajax_nonce": wsuContentViewerGroups_nonce,
+				"post_id": $( "#post_ID" ).val()
 			};
 
 			var response_data;
 
-			$.post(ajaxurl, data, function(response) {
-				if ( response['success'] === false ) {
+			$.post( ajaxurl, data, function( response ) {
+				if ( response[ "success" ] === false ) {
+
 					// @todo output response.data in an error message template.
 				} else {
 					var new_groups = [];
-					response_data = response['data'];
+					response_data = response[ "data" ];
 					$( response_data ).each( function( item ) {
 						var group = new wsuContentViewers.group( {
 							groupID: response_data[ item ].id,
@@ -102,13 +104,13 @@ var wsuContentViewers = wsuContentViewers || {};
 							memberCount: response_data[ item ].member_count,
 							memberList: response_data[ item ].member_list,
 							selectedClass: response_data[ item ].selected_class
-						});
+						} );
 						new_groups.push( response_data[ item ].id );
-						wsuContentViewers.app.addOne( group, 'current' );
-					});
+						wsuContentViewers.app.addOne( group, "current" );
+					} );
 					this.groups = new_groups;
 				}
-			});
+			} );
 		},
 
 		/**
@@ -117,10 +119,10 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		removeSearchSpinner: function() {
-			var $vis_group_results = $('.visibility-group-results');
+			var $vis_group_results = $( ".visibility-group-results" );
 
-			if ( $vis_group_results.hasClass('pending-results' )) {
-				$vis_group_results.removeClass('pending-results');
+			if ( $vis_group_results.hasClass( "pending-results" ) ) {
+				$vis_group_results.removeClass( "pending-results" );
 			}
 		},
 
@@ -130,10 +132,10 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		showSearchSpinner: function() {
-			var $vis_group_results = $('.visibility-group-results');
+			var $vis_group_results = $( ".visibility-group-results" );
 
-			if ( false === $vis_group_results.hasClass('pending-results') ) {
-				$vis_group_results.addClass('pending-results');
+			if ( false === $vis_group_results.hasClass( "pending-results" ) ) {
+				$vis_group_results.addClass( "pending-results" );
 			}
 		},
 
@@ -144,12 +146,13 @@ var wsuContentViewers = wsuContentViewers || {};
 		 *
 		 * @param {object} e A click or keydown event.
 		 */
-		searchGroups: function(e) {
+		searchGroups: function( e ) {
+
 			// Watch for and handle enter key initialized searches.
-			if ( 'keydown' === e.type && 13 === e.keyCode ) {
+			if ( "keydown" === e.type && 13 === e.keyCode ) {
 				e.preventDefault();
 				e.stopPropagation();
-			} else if ( 'keydown' === e.type ) {
+			} else if ( "keydown" === e.type ) {
 				return true;
 			}
 
@@ -157,38 +160,38 @@ var wsuContentViewers = wsuContentViewers || {};
 			this.showSearchList();
 
 			var data = {
-				'action': 'search_content_visibility_groups',
-				'_ajax_nonce' : wsuContentViewerGroups_nonce,
-				'post_id': $('#post_ID').val(),
-				'visibility_group': $('#visibility-search-term').val()
+				"action": "search_content_visibility_groups",
+				"_ajax_nonce": wsuContentViewerGroups_nonce,
+				"post_id": $( "#post_ID" ).val(),
+				"visibility_group": $( "#visibility-search-term" ).val()
 			};
 
 			var response_data;
 
-			$.post(ajaxurl, data, function(response) {
+			$.post( ajaxurl, data, function( response ) {
 				wsuContentViewers.app.removeSearchSpinner();
 
-				if ( response['success'] === false ) {
-					$('.visibility-group-results').html('<div class="no-group-results">Error: ' + response['data'] + '</div>' );
+				if ( response[ "success" ] === false ) {
+					$( ".visibility-group-results" ).html( '<div class="no-group-results">Error: ' + response[ "data" ] + "</div>" );
 				} else {
-					response_data = response['data'];
+					response_data = response[ "data" ];
 
 					if ( 0 === response_data.length ) {
-						$('.visibility-group-results').html('<div class="no-group-results">No matching results...</div>' );
+						$( ".visibility-group-results" ).html( '<div class="no-group-results">No matching results...</div>' );
 					} else {
-						$( response_data).each( function( item ) {
+						$( response_data ).each( function( item ) {
 							var group = new wsuContentViewers.group( {
 								groupID: response_data[ item ].id,
 								groupName: response_data[ item ].display_name,
 								memberCount: response_data[ item ].member_count,
 								memberList: response_data[ item ].member_list,
 								selectedClass: response_data[ item ].selected_class
-							});
-							wsuContentViewers.app.addOne( group, 'find' );
-						});
+							} );
+							wsuContentViewers.app.addOne( group, "find" );
+						} );
 					}
 				}
-			});
+			} );
 		},
 
 		/**
@@ -203,7 +206,7 @@ var wsuContentViewers = wsuContentViewers || {};
 			this.getCurrentGroups();
 			this.showCurrentList();
 			this.clearSearchList();
-			this.$('#visibility-search-term').val('');
+			this.$( "#visibility-search-term" ).val( "" );
 		},
 
 		/**
@@ -215,13 +218,13 @@ var wsuContentViewers = wsuContentViewers || {};
 		 */
 		saveGroups: function() {
 			var data = {
-				'action': 'set_content_visibility_groups',
-				'_ajax_nonce' : wsuContentViewerGroups_nonce,
-				'post_id': $('#post_ID').val(),
-				'visibility_groups': this.groups_modified
+				"action": "set_content_visibility_groups",
+				"_ajax_nonce": wsuContentViewerGroups_nonce,
+				"post_id": $( "#post_ID" ).val(),
+				"visibility_groups": this.groups_modified
 			};
 
-			$.post(ajaxurl, data, this.saveGroupResponse);
+			$.post( ajaxurl, data, this.saveGroupResponse );
 		},
 
 		/**
@@ -239,7 +242,7 @@ var wsuContentViewers = wsuContentViewers || {};
 			wsuContentViewers.app.showCurrentList();
 			wsuContentViewers.app.clearCurrentList();
 			wsuContentViewers.app.clearSearchList();
-			wsuContentViewers.app.$('#visibility-search-term').val('');
+			wsuContentViewers.app.$( "#visibility-search-term" ).val( "" );
 		},
 
 		/**
@@ -248,12 +251,12 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		toggleOverlay: function() {
-			var $overlay = $('.visibility-group-overlay');
+			var $overlay = $( ".visibility-group-overlay" );
 
-			if ( $overlay.hasClass('visibility-group-overlay-open') ) {
-				$overlay.removeClass('visibility-group-overlay-open');
+			if ( $overlay.hasClass( "visibility-group-overlay-open" ) ) {
+				$overlay.removeClass( "visibility-group-overlay-open" );
 			} else {
-				$overlay.addClass('visibility-group-overlay-open');
+				$overlay.addClass( "visibility-group-overlay-open" );
 			}
 		},
 
@@ -264,23 +267,23 @@ var wsuContentViewers = wsuContentViewers || {};
 		 *
 		 * @param {object} e Click event.
 		 */
-		toggleMemberList: function(e) {
-			var $target = $(e.target);
+		toggleMemberList: function( e ) {
+			var $target = $( e.target );
 
-			if ( $target.is( '.visibility-group-select' ) ) {
+			if ( $target.is( ".visibility-group-select" ) ) {
 				return;
 			}
 
-			if ( ! $target.is( '.visibility-group-single' ) ) {
-				$target = $target.parents('.visibility-group-single');
+			if ( !$target.is( ".visibility-group-single" ) ) {
+				$target = $target.parents( ".visibility-group-single" );
 			}
 
-			var $target_members = $target.find('.visibility-group-members');
+			var $target_members = $target.find( ".visibility-group-members" );
 
-			if ( $target_members.hasClass('visibility-group-members-open') ) {
-				$target_members.removeClass('visibility-group-members-open');
+			if ( $target_members.hasClass( "visibility-group-members-open" ) ) {
+				$target_members.removeClass( "visibility-group-members-open" );
 			} else {
-				$target_members.addClass('visibility-group-members-open');
+				$target_members.addClass( "visibility-group-members-open" );
 			}
 		},
 
@@ -291,16 +294,16 @@ var wsuContentViewers = wsuContentViewers || {};
 		 *
 		 * @param {object} e Click event.
 		 */
-		toggleGroupSelection: function(e) {
-			var $target = $(e.target),
-				data = $target.data('group-id'); // string representing the group selection.
+		toggleGroupSelection: function( e ) {
+			var $target = $( e.target ),
+				data = $target.data( "group-id" ); // String representing the group selection.
 
 			if ( $.inArray( data, this.groups_modified ) > -1 ) {
-				this.groups_modified = _.without( this.groups_modified, data);
-				$target.removeClass('visibility-group-selected');
+				this.groups_modified = _.without( this.groups_modified, data );
+				$target.removeClass( "visibility-group-selected" );
 			} else {
-				this.groups_modified.push(data);
-				$target.addClass('visibility-group-selected');
+				this.groups_modified.push( data );
+				$target.addClass( "visibility-group-selected" );
 			}
 		},
 
@@ -310,7 +313,7 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		clearSearchList: function() {
-			this.$('#visibility-find-group-list .visibility-group-results').html('');
+			this.$( "#visibility-find-group-list .visibility-group-results" ).html( "" );
 		},
 
 		/**
@@ -320,7 +323,7 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		clearCurrentList: function() {
-			this.$('#visibility-current-group-list .visibility-group-results').html('');
+			this.$( "#visibility-current-group-list .visibility-group-results" ).html( "" );
 		},
 
 		/**
@@ -330,7 +333,7 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		showSearchList: function() {
-			if ( $('#visibility-find-group-list').hasClass('visibility-group-list-open') ) {
+			if ( $( "#visibility-find-group-list" ).hasClass( "visibility-group-list-open" ) ) {
 				this.clearSearchList();
 			} else {
 				this.toggleLists();
@@ -343,14 +346,14 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		showCurrentList: function() {
-			var $current_group = $('#visibility-current-group-list'),
-				$find_group = $('#visibility-find-group-list');
+			var $current_group = $( "#visibility-current-group-list" ),
+				$find_group = $( "#visibility-find-group-list" );
 
-			if ( $find_group.hasClass('visibility-group-list-open') ) {
-				$find_group.removeClass('visibility-group-list-open');
-				$find_group.find('.visibility-group-tab').removeClass('visibility-current-tab');
-				$current_group.addClass('visibility-group-list-open');
-				$current_group.find('.visibility-group-tab').addClass('visibility-current-tab');
+			if ( $find_group.hasClass( "visibility-group-list-open" ) ) {
+				$find_group.removeClass( "visibility-group-list-open" );
+				$find_group.find( ".visibility-group-tab" ).removeClass( "visibility-current-tab" );
+				$current_group.addClass( "visibility-group-list-open" );
+				$current_group.find( ".visibility-group-tab" ).addClass( "visibility-current-tab" );
 			}
 		},
 
@@ -361,15 +364,15 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @since 0.1.0
 		 */
 		toggleLists: function() {
-			$('.visibility-group-list').each(function(){
-				if ( $(this).hasClass('visibility-group-list-open') ) {
-					$(this).removeClass('visibility-group-list-open');
-					$(this).find('.visibility-group-tab').removeClass('visibility-current-tab');
+			$( ".visibility-group-list" ).each( function() {
+				if ( $( this ).hasClass( "visibility-group-list-open" ) ) {
+					$( this ).removeClass( "visibility-group-list-open" );
+					$( this ).find( ".visibility-group-tab" ).removeClass( "visibility-current-tab" );
 				} else {
-					$(this).addClass('visibility-group-list-open');
-					$(this).find('.visibility-group-tab').addClass('visibility-current-tab');
+					$( this ).addClass( "visibility-group-list-open" );
+					$( this ).find( ".visibility-group-tab" ).addClass( "visibility-current-tab" );
 				}
-			});
+			} );
 		},
 
 		/**
@@ -382,7 +385,7 @@ var wsuContentViewers = wsuContentViewers || {};
 			this.toggleOverlay();
 			this.clearSearchList();
 			this.clearCurrentList();
-			this.$('#visibility-search-term').val('');
+			this.$( "#visibility-search-term" ).val( "" );
 		}
-	});
+	} );
 } )( window, Backbone, jQuery, _, wsuContentViewers );
