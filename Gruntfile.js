@@ -2,6 +2,16 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 
+		jscs: {
+			src: [ "js/models/*.js", "js/views/*.js", "js/content-visibility-app.js" ],
+			options: {
+				preset: "jquery",
+				verbose: true,                                 // Display the rule name with the warning.
+				requireCamelCaseOrUpperCaseIdentifiers: false, // We rely on name_name too much to change them all.
+				maximumLineLength: 150,                        // temporary
+			}
+		},
+
 		concat: {
 			ad_visibility: {
 				src: [
@@ -68,6 +78,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-jscs');
 	grunt.loadNpmTasks('grunt-phpcs');
 
 	// Default task(s).
