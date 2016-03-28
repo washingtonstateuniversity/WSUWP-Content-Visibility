@@ -45,9 +45,13 @@ module.exports = function(grunt) {
 		},
 
 		cssmin: {
+			options: {
+				advanced: false,
+				sourceMap: true
+			},
 			combine: {
 				files: {
-					"css/admin-style.min.css": ["css/admin-style.css"]
+					"css/admin-style.min.css": "css/admin-style.css"
 				}
 			}
 		},
