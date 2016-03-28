@@ -80,7 +80,7 @@ var wsuContentEditors = wsuContentEditors || {};
             var response_data;
 
             $.post( ajaxurl, data, function( response ) {
-                if ( response[ "success" ] === false ) {
+                if ( response.success === false ) {
 
                     // @todo output response.data in an error message template.
                 } else {
@@ -122,7 +122,7 @@ var wsuContentEditors = wsuContentEditors || {};
             var response_data;
 
             $.post( ajaxurl, data, function( response ) {
-                if ( response[ "success" ] === false ) {
+                if ( response.success === false ) {
 
                     // @todo Output response.data in an error message template.
                 } else {

@@ -91,12 +91,12 @@ var wsuContentViewers = wsuContentViewers || {};
 			var response_data;
 
 			$.post( ajaxurl, data, function( response ) {
-				if ( response[ "success" ] === false ) {
+				if ( response.success === false ) {
 
 					// @todo output response.data in an error message template.
 				} else {
 					var new_groups = [];
-					response_data = response[ "data" ];
+					response_data = response.data;
 					$( response_data ).each( function( item ) {
 						var group = new wsuContentViewers.group( {
 							groupID: response_data[ item ].id,
@@ -171,10 +171,10 @@ var wsuContentViewers = wsuContentViewers || {};
 			$.post( ajaxurl, data, function( response ) {
 				wsuContentViewers.app.removeSearchSpinner();
 
-				if ( response[ "success" ] === false ) {
-					$( ".visibility-group-results" ).html( '<div class="no-group-results">Error: ' + response[ "data" ] + "</div>" );
+				if ( response.success === false ) {
+					$( ".visibility-group-results" ).html( '<div class="no-group-results">Error: ' + response.data + "</div>" );
 				} else {
-					response_data = response[ "data" ];
+					response_data = response.data;
 
 					if ( 0 === response_data.length ) {
 						$( ".visibility-group-results" ).html( '<div class="no-group-results">No matching results...</div>' );
