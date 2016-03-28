@@ -366,7 +366,20 @@ class WSUWP_Content_Visibility {
 		}
 
 		wp_enqueue_style( 'wsuwp-content-visibility', plugins_url( 'css/admin-style.min.css', dirname( __FILE__ ) ), array(), false );
-		wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+
+		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
+			wp_enqueue_script( 'wsuwp-content-editors-model', plugins_url( 'js/models/content-editors-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-viewers-model', plugins_url( 'js/models/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-editors-app', plugins_url( 'js/views/content-editors-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-editors-group', plugins_url( 'js/views/content-editors-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-viewers-app', plugins_url( 'js/views/content-visibility-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-viewers-group', plugins_url( 'js/views/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+
+			wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+		} else {
+			wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+		}
+
 
 		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
 		$ajax_nonce = wp_create_nonce( 'wsu-visibility-groups' );

@@ -34,7 +34,10 @@ module.exports = function(grunt) {
 				src: [
 					'js/views/content-visibility-group.js',
 					'js/views/content-visibility-app.js',
+					'js/views/content-editors-group.js',
+					'js/views/content-editors-app.js',
 					'js/models/content-visibility-group.js',
+					'js/models/content-editors-group.js',
 					'js/content-visibility-app.js'
 				],
 				dest: 'js/content-visibility.js'
