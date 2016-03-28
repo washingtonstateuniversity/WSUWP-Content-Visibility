@@ -1,10 +1,10 @@
 /* global Backbone, jQuery, _ */
-var wsuContentVisibility = wsuContentVisibility || {};
+var wsuContentViewers = wsuContentViewers || {};
 
-(function (window, Backbone, $, _, wsuContentVisibility) {
+( function ( window, Backbone, $, _, wsuContentViewers ) {
 	'use strict';
 
-	wsuContentVisibility.appView = Backbone.View.extend({
+	wsuContentViewers.appView = Backbone.View.extend({
 
 		/**
 		 * Primary container to work with. We add this via meta box.
@@ -44,7 +44,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 */
 		initialize: function() {
 			// Convert the JSON object we receive from the document to an array.
-			this.groups = $.map(window.wsuVisibilityGroups, function(el) { return el; });
+			this.groups = $.map(window.wsuContentViewerGroups, function(el) { return el; });
 			this.groups_modified = this.groups;
 		},
 
@@ -57,7 +57,9 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * @param area  Area representing the list group is being added to.
 		 */
 		addOne: function( group, area ) {
-			var view = new wsuContentVisibility.groupView({ model: group });
+			var view;
+
+			view = new wsuContentViewers.groupView( { model: group } );
 
 			$('#visibility-' + area + '-group-list').find('.visibility-group-results').append( view.render().el );
 		},
@@ -81,7 +83,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		getCurrentGroups: function() {
 			var data = {
 				'action': 'get_content_visibility_groups',
-				'_ajax_nonce' : wsuVisibilityGroups_nonce,
+				'_ajax_nonce' : wsuContentViewerGroups_nonce,
 				'post_id': $('#post_ID').val()
 			};
 
@@ -94,7 +96,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 					var new_groups = [];
 					response_data = response['data'];
 					$( response_data ).each( function( item ) {
-						var group = new wsuContentVisibility.group( {
+						var group = new wsuContentViewers.group( {
 							groupID: response_data[ item ].id,
 							groupName: response_data[ item ].display_name,
 							memberCount: response_data[ item ].member_count,
@@ -102,7 +104,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 							selectedClass: response_data[ item ].selected_class
 						});
 						new_groups.push( response_data[ item ].id );
-						wsuContentVisibility.app.addOne( group, 'current' );
+						wsuContentViewers.app.addOne( group, 'current' );
 					});
 					this.groups = new_groups;
 				}
@@ -156,7 +158,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 
 			var data = {
 				'action': 'search_content_visibility_groups',
-				'_ajax_nonce' : wsuVisibilityGroups_nonce,
+				'_ajax_nonce' : wsuContentViewerGroups_nonce,
 				'post_id': $('#post_ID').val(),
 				'visibility_group': $('#visibility-search-term').val()
 			};
@@ -164,7 +166,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			var response_data;
 
 			$.post(ajaxurl, data, function(response) {
-				wsuContentVisibility.app.removeSearchSpinner();
+				wsuContentViewers.app.removeSearchSpinner();
 
 				if ( response['success'] === false ) {
 					$('.visibility-group-results').html('<div class="no-group-results">Error: ' + response['data'] + '</div>' );
@@ -175,14 +177,14 @@ var wsuContentVisibility = wsuContentVisibility || {};
 						$('.visibility-group-results').html('<div class="no-group-results">No matching results...</div>' );
 					} else {
 						$( response_data).each( function( item ) {
-							var group = new wsuContentVisibility.group( {
+							var group = new wsuContentViewers.group( {
 								groupID: response_data[ item ].id,
 								groupName: response_data[ item ].display_name,
 								memberCount: response_data[ item ].member_count,
 								memberList: response_data[ item ].member_list,
 								selectedClass: response_data[ item ].selected_class
 							});
-							wsuContentVisibility.app.addOne( group, 'find' );
+							wsuContentViewers.app.addOne( group, 'find' );
 						});
 					}
 				}
@@ -214,7 +216,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		saveGroups: function() {
 			var data = {
 				'action': 'set_content_visibility_groups',
-				'_ajax_nonce' : wsuVisibilityGroups_nonce,
+				'_ajax_nonce' : wsuContentViewerGroups_nonce,
 				'post_id': $('#post_ID').val(),
 				'visibility_groups': this.groups_modified
 			};
@@ -233,11 +235,11 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		 * @param response
 		 */
 		saveGroupResponse: function( response ) {
-			wsuContentVisibility.app.getCurrentGroups();
-			wsuContentVisibility.app.showCurrentList();
-			wsuContentVisibility.app.clearCurrentList();
-			wsuContentVisibility.app.clearSearchList();
-			wsuContentVisibility.app.$('#visibility-search-term').val('');
+			wsuContentViewers.app.getCurrentGroups();
+			wsuContentViewers.app.showCurrentList();
+			wsuContentViewers.app.clearCurrentList();
+			wsuContentViewers.app.clearSearchList();
+			wsuContentViewers.app.$('#visibility-search-term').val('');
 		},
 
 		/**
@@ -383,4 +385,4 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			this.$('#visibility-search-term').val('');
 		}
 	});
-})(window, Backbone, jQuery, _, wsuContentVisibility);
+} )( window, Backbone, jQuery, _, wsuContentViewers );

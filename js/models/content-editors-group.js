@@ -1,10 +1,10 @@
 /* global Backbone, jQuery, _ */
-var wsuADVisibility = wsuADVisibility || {};
+var wsuContentEditors = wsuContentEditors || {};
 
-(function (window, Backbone, $, _, wsuADVisibility) {
+( function ( window, Backbone, $, _, wsuContentEditors ) {
     'use strict';
 
-    wsuADVisibility.group = Backbone.Model.extend({
+    wsuContentEditors.group = Backbone.Model.extend({
         default: {
             groupID: '',
             groupName: '',
@@ -14,7 +14,7 @@ var wsuADVisibility = wsuADVisibility || {};
         }
     });
 
-    wsuADVisibility.group.prototype.sync = function () { return null; };
-    wsuADVisibility.group.prototype.fetch = function () { return null; };
-    wsuADVisibility.group.prototype.save = function () { return null; };
-})(window, Backbone, jQuery, _, wsuADVisibility);
+    wsuContentEditors.group.prototype.sync = function () { return null; };
+    wsuContentEditors.group.prototype.fetch = function () { return null; };
+    wsuContentEditors.group.prototype.save = function () { return null; };
+} )( window, Backbone, jQuery, _, wsuContentEditors );

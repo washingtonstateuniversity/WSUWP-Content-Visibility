@@ -1,11 +1,7 @@
-var wsuContentVisibility = wsuContentVisibility || {};
+var wsuContentViewers = wsuContentViewers || {};
+var wsuContentEditors = wsuContentEditors || {};
 
-(function (window, wsuContentVisibility) {
-	wsuContentVisibility.app = new wsuContentVisibility.appView();
-})(window, wsuContentVisibility);
-
-var wsuADVisibility = wsuADVisibility || {};
-
-(function (window, wsuADVisibility) {
-	wsuADVisibility.app = new wsuADVisibility.appView();
-})(window, wsuADVisibility);
+( function ( window, wsuContentViewers, wsuContentEditors ) {
+	wsuContentViewers.app = new wsuContentViewers.appView();
+	wsuContentEditors.app = new wsuContentEditors.appView();
+})( window, wsuContentViewers, wsuContentEditors );

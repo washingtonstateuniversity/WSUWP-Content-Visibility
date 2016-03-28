@@ -371,14 +371,14 @@ class WSUWP_Content_Visibility {
 		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
 		$ajax_nonce = wp_create_nonce( 'wsu-visibility-groups' );
 
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups', $data );
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups_nonce', $ajax_nonce );
+		wp_localize_script( 'wsuwp-content-visibility', 'wsuContentViewerGroups', $data );
+		wp_localize_script( 'wsuwp-content-visibility', 'wsuContentViewerGroups_nonce', $ajax_nonce );
 
 		$data = get_post_meta( get_the_ID(), '_ad_editor_groups', true );
 		$ajax_nonce = wp_create_nonce( 'wsu-sso-ad-groups' );
 
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuADGroups', $data );
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuADGroups_nonce', $ajax_nonce );
+		wp_localize_script( 'wsuwp-content-visibility', 'wsuContentEditorGroups', $data );
+		wp_localize_script( 'wsuwp-content-visibility', 'wsuContentEditorGroups_nonce', $ajax_nonce );
 	}
 
 	/**

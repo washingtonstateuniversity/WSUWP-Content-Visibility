@@ -1,10 +1,10 @@
 /* global Backbone, jQuery, _ */
-var wsuADVisibility = wsuADVisibility || {};
+var wsuContentEditors = wsuContentEditors || {};
 
-(function (window, Backbone, $, _, wsuADVisibility) {
+( function ( window, Backbone, $, _, wsuContentEditors ) {
     'use strict';
 
-    wsuADVisibility.appView = Backbone.View.extend({
+    wsuContentEditors.appView = Backbone.View.extend({
         // We provide this container by adding a meta box in WordPress.
         el: '#wsuwp-content-editors-box',
 
@@ -36,7 +36,7 @@ var wsuADVisibility = wsuADVisibility || {};
          */
         initialize: function() {
             // Convert the JSON object we receive from the document to an array.
-            this.groups = $.map(window.wsuADGroups, function(el) { return el; });
+            this.groups = $.map(window.wsuContentEditorGroups, function(el) { return el; });
             this.groups_modified = this.groups;
         },
 
@@ -47,7 +47,7 @@ var wsuADVisibility = wsuADVisibility || {};
          * @param area  Area representing the list group is being added to.
          */
         addOne: function( group, area ) {
-            var view = new wsuADVisibility.groupView({ model: group });
+            var view = new wsuContentEditors.groupView({ model: group });
 
             $('#ad-' + area + '-group-list').find('.ad-group-results').append( view.render().el );
         },
@@ -71,7 +71,7 @@ var wsuADVisibility = wsuADVisibility || {};
         getCurrentGroups: function() {
             var data = {
                 'action': 'wsuwp_get_ad_groups',
-                '_ajax_nonce' : wsuADGroups_nonce,
+                '_ajax_nonce' : wsuContentEditorGroups_nonce,
                 'post_id': $('#post_ID').val()
             };
 
@@ -84,7 +84,7 @@ var wsuADVisibility = wsuADVisibility || {};
                     var new_groups = [];
                     response_data = $.parseJSON( response );
                     $( response_data).each( function( item ) {
-                        var group = new wsuADVisibility.group( {
+                        var group = new wsuContentEditors.group( {
                             groupID: response_data[ item ].dn,
                             groupName: response_data[ item ].display_name,
                             memberCount: response_data[ item ].member_count,
@@ -92,7 +92,7 @@ var wsuADVisibility = wsuADVisibility || {};
                             selectedClass: response_data[ item ].selected_class
                         });
                         new_groups.push( response_data[ item ].dn );
-                        wsuADVisibility.app.addOne( group, 'current' );
+                        wsuContentEditors.app.addOne( group, 'current' );
                     });
                     this.groups = new_groups;
                 }
@@ -111,7 +111,7 @@ var wsuADVisibility = wsuADVisibility || {};
 
             var data = {
                 'action': 'wsuwp_ad_group_check',
-                '_ajax_nonce' : wsuADGroups_nonce,
+                '_ajax_nonce' : wsuContentEditorGroups_nonce,
                 'post_id': $('#post_ID').val(),
                 'ad_group': $('#wsu-group-visibility').val()
             };
@@ -124,14 +124,14 @@ var wsuADVisibility = wsuADVisibility || {};
                 } else {
                     response_data = $.parseJSON( response );
                     $( response_data).each( function( item ) {
-                        var group = new wsuADVisibility.group( {
+                        var group = new wsuContentEditors.group( {
                             groupID: response_data[ item ].dn,
                             groupName: response_data[ item ].display_name,
                             memberCount: response_data[ item ].member_count,
                             memberList: response_data[ item ].member,
                             selectedClass: response_data[ item ].selected_class
                         });
-                        wsuADVisibility.app.addOne( group, 'find' );
+                        wsuContentEditors.app.addOne( group, 'find' );
                     });
                 }
             });
@@ -166,7 +166,7 @@ var wsuADVisibility = wsuADVisibility || {};
 
             var data = {
                 'action': 'wsuwp_ad_group_save',
-                '_ajax_nonce' : wsuADGroups_nonce,
+                '_ajax_nonce' : wsuContentEditorGroups_nonce,
                 'post_id': $('#post_ID').val(),
                 'ad_groups': this.groups_modified
             };
@@ -183,11 +183,11 @@ var wsuADVisibility = wsuADVisibility || {};
          * @param response
          */
         saveGroupResponse: function( response ) {
-            wsuADVisibility.app.getCurrentGroups();
-            wsuADVisibility.app.showCurrentList();
-            wsuADVisibility.app.clearCurrentList();
-            wsuADVisibility.app.clearSearchList();
-            wsuADVisibility.app.$('#wsu-group-visibility').val('');
+            wsuContentEditors.app.getCurrentGroups();
+            wsuContentEditors.app.showCurrentList();
+            wsuContentEditors.app.clearCurrentList();
+            wsuContentEditors.app.clearSearchList();
+            wsuContentEditors.app.$('#wsu-group-visibility').val('');
         },
 
         /**
@@ -316,4 +316,4 @@ var wsuADVisibility = wsuADVisibility || {};
             this.$('#wsu-group-visibility').val('');
         }
     });
-})(window, Backbone, jQuery, _, wsuADVisibility);
+} )( window, Backbone, jQuery, _, wsuContentEditors );
