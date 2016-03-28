@@ -6,7 +6,7 @@ var wsuADVisibility = wsuADVisibility || {};
 
     wsuADVisibility.appView = Backbone.View.extend({
         // We provide this container by adding a meta box in WordPress.
-        el: '#wsuwp-sso-ad-group',
+        el: '#wsuwp-content-editors-box',
 
         // Setup the events used in the overall application view.
         events: {

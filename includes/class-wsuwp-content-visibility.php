@@ -232,11 +232,11 @@ class WSUWP_Content_Visibility {
 	 */
 	public function add_meta_boxes( $post_type ) {
 		if ( post_type_supports( $post_type, 'wsuwp-content-viewers' ) ) {
-			add_meta_box( 'wsuwp-content-visibility', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
+			add_meta_box( 'wsuwp-content-viewers-box', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
 		}
 
 		if ( post_type_supports( $post_type, 'wsuwp-content-editors' ) ) {
-			add_meta_box( 'wsuwp-sso-ad-group', 'Editor Groups', array( $this, 'display_group_visibility_meta_box' ), null, 'side', 'high' );
+			add_meta_box( 'wsuwp-content-editors-box', 'Editor Groups', array( $this, 'display_group_visibility_meta_box' ), null, 'side', 'high' );
 		}
 	}
 

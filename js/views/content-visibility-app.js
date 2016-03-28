@@ -9,7 +9,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		/**
 		 * Primary container to work with. We add this via meta box.
 		 */
-		el: '#wsuwp-content-visibility',
+		el: '#wsuwp-content-viewers-box',
 
 		/**
 		 * Setup the events we manage in this plugin.
