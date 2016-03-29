@@ -36,18 +36,14 @@ class WSUWP_Content_Visibility {
 		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
 
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
-		add_filter( 'user_has_cap', array( $this, 'ad_groups_edit_page' ), 10, 4 );
+		add_filter( 'user_has_cap', array( $this, 'allow_edit_content' ), 10, 4 );
 
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
-		add_action( 'wp_ajax_get_content_visibility_groups', array( $this, 'ajax_get_viewer_groups' ) );
-		add_action( 'wp_ajax_set_content_visibility_groups', array( $this, 'ajax_set_viewer_groups' ) );
-		add_action( 'wp_ajax_search_content_visibility_groups', array( $this, 'ajax_search_viewer_groups' ) );
-
-		add_action( 'wp_ajax_wsuwp_ad_group_check', array( $this, 'ajax_get_editor_groups' ) );
-		add_action( 'wp_ajax_wsuwp_ad_group_save', array( $this, 'ajax_set_editor_groups' ) );
-		add_action( 'wp_ajax_wsuwp_get_ad_groups', array( $this, 'ajax_search_editor_groups' ) );
+		add_action( 'wp_ajax_get_content_visibility_groups', array( $this, 'ajax_get_groups' ) );
+		add_action( 'wp_ajax_set_content_visibility_groups', array( $this, 'ajax_set_groups' ) );
+		add_action( 'wp_ajax_search_content_visibility_groups', array( $this, 'ajax_search_groups' ) );
 	}
 
 	/**
@@ -56,10 +52,8 @@ class WSUWP_Content_Visibility {
 	 * @since 0.1.0
 	 */
 	public function add_post_type_support() {
-		add_post_type_support( 'post', 'wsuwp-content-viewers' );
-		add_post_type_support( 'page', 'wsuwp-content-viewers' );
-		add_post_type_support( 'post', 'wsuwp-content-editors' );
-		add_post_type_support( 'page', 'wsuwp-content-editors' );
+		add_post_type_support( 'post', 'wsuwp-content-visibility' );
+		add_post_type_support( 'page', 'wsuwp-content-visibility' );
 	}
 
 	/**
@@ -145,7 +139,7 @@ class WSUWP_Content_Visibility {
 	 *
 	 * @return array Modified list of capabilities assigned to the user.
 	 */
-	public function ad_groups_edit_page( $allcaps, $caps, $args, $user ) {
+	public function allow_edit_content( $allcaps, $caps, $args, $user ) {
 		// Catch current administrators and editors.
 		$user_can_create_pages = array_intersect( array( 'administrator', 'editor' ), $user->roles );
 
@@ -231,31 +225,26 @@ class WSUWP_Content_Visibility {
 	 * @param string  $post_type The slug of the current post type being edited.
 	 */
 	public function add_meta_boxes( $post_type ) {
-		if ( post_type_supports( $post_type, 'wsuwp-content-viewers' ) ) {
-			add_meta_box( 'wsuwp-content-viewers-box', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
-		}
-
-		if ( post_type_supports( $post_type, 'wsuwp-content-editors' ) ) {
-			add_meta_box( 'wsuwp-content-editors-box', 'Editor Groups', array( $this, 'display_group_visibility_meta_box' ), null, 'side', 'high' );
+		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) ) {
+			add_meta_box( 'wsuwp-content-visibility-box', 'Content Visibility', array( $this, 'display_meta_box' ), null, 'side', 'high' );
 		}
 	}
 
 	/**
-	 * Display the meta box used to assign and maintain visibility for users and groups.
+	 * Display the meta box used to search for groups and users to add as viewers and editors
+	 * of a piece of content.
 	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_Post $post The current post being edited.
+	 * @param WP_Post $post
 	 */
-	public function display_visibility_meta_box( $post ) {
+	public function display_meta_box( $post ) {
 		?>
-		<p class="description">Groups and users with access to view this content.</p>
-		<input type="button" id="visibility-group-manage" class="primary button" value="Manage Groups" />
+		<p class="description">Manage authorized viewers and editors of this content.</p>
+		<input type="button" id="manage-visibility-groups" class="primary button" value="Manage Visibility" />
 		<div class="visibility-group-overlay">
 			<div class="visibility-group-overlay-wrapper">
 				<div class="visibility-group-overlay-header">
 					<div class="visibility-group-overlay-title">
-						<h3>Manage Groups</h3>
+						<h3>Manage Visibility</h3>
 					</div>
 					<div class="visibility-group-overlay-close">Close</div>
 				</div>
@@ -297,60 +286,6 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Display the meta box used to search for an AD group.
-	 *
-	 * @param WP_Post $post The current post being edited.
-	 */
-	public function display_group_visibility_meta_box( $post ) {
-		?>
-		<p class="description">Groups from Active Directory with editor access to this page.</p>
-		<input type="button" id="wsu-group-manage" class="primary button" value="Manage Groups" />
-		<div class="ad-group-overlay">
-			<div class="ad-group-overlay-wrapper">
-				<div class="ad-group-overlay-header">
-					<div class="ad-group-overlay-title">
-						<h3>Manage Active Directory Editor Groups</h3>
-					</div>
-					<div class="ad-group-overlay-close">Close</div>
-				</div>
-				<div class="ad-group-overlay-body">
-					<div class="ad-group-search-area">
-						<input type="text" id="wsu-group-visibility" name="wsu_group_visibility" class="widefat" />
-						<input type="button" id="wsu-group-search" class="button button-primary button-large" value="Find" />
-					</div>
-					<div class="ad-save-cancel">
-						<input type="button" id="wsu-save-groups" class="button button-primary button-large" value="Save" />
-						<input type="button" id="wsu-cancel-groups" class="button button-secondary button-large" value="Cancel" />
-					</div>
-					<div id="ad-current-group-list" class="ad-group-list ad-group-list-open">
-						<div id="ad-current-group-tab" class="ad-group-tab ad-current-tab">Currently Assigned</div>
-						<div class="ad-group-results"></div>
-					</div>
-					<div id="ad-find-group-list" class="ad-group-list">
-						<div id="ad-find-group-tab" class="ad-group-tab">Group Results</div>
-						<div class="ad-group-results"></div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="clear"></div>
-		<script type="text/template" id="ad-group-template">
-			<div class="ad-group-single">
-				<div class="ad-group-select <%= selectedClass %>" data-group-id="<%= groupID %>"></div>
-				<div class="ad-group-name"><%= groupName %></div>
-				<div class="ad-group-member-count">(<%= memberCount %> members)</div>
-				<ul class="ad-group-members">
-					<% for(var member in memberList) { %>
-					<li><%= memberList[member] %></li>
-					<% } %>
-				</ul>
-				<div class="clear"></div>
-			</div>
-		</script>
-		<?php
-	}
-
-	/**
 	 * Enqueue Javascript required in the admin on support post type screens.
 	 *
 	 * @todo capabilities
@@ -361,25 +296,22 @@ class WSUWP_Content_Visibility {
 		if ( ! isset( get_current_screen()->post_type ) ) {
 			return;
 		}
-		if ( ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-viewers' ) && ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-editors' ) ) {
+
+		if ( ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-visibility' ) ) {
 			return;
 		}
 
 		wp_enqueue_style( 'wsuwp-content-visibility', plugins_url( 'css/admin-style.min.css', dirname( __FILE__ ) ), array(), false );
 
 		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
-			wp_enqueue_script( 'wsuwp-content-editors-model', plugins_url( 'js/models/content-editors-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-			wp_enqueue_script( 'wsuwp-content-viewers-model', plugins_url( 'js/models/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-			wp_enqueue_script( 'wsuwp-content-editors-app', plugins_url( 'js/views/content-editors-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-			wp_enqueue_script( 'wsuwp-content-editors-group', plugins_url( 'js/views/content-editors-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-			wp_enqueue_script( 'wsuwp-content-viewers-app', plugins_url( 'js/views/content-visibility-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-			wp_enqueue_script( 'wsuwp-content-viewers-group', plugins_url( 'js/views/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-visibility-model', plugins_url( 'js/models/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-visibility-app', plugins_url( 'js/views/content-visibility-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
+			wp_enqueue_script( 'wsuwp-content-visibility-group', plugins_url( 'js/views/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
 
 			wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
 		} else {
 			wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
 		}
-
 
 		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
 		$ajax_nonce = wp_create_nonce( 'wsu-visibility-groups' );
@@ -398,9 +330,12 @@ class WSUWP_Content_Visibility {
 	 * Retrieve a current list of groups attached to a post for display in the
 	 * admin modal.
 	 *
+	 * @todo store editors in _ad_editor_groups, viewers in _content_visibility_groups
+	 * @todo back-compat way of changing those names ^
+	 *
 	 * @since 0.1.0
 	 */
-	public function ajax_get_viewer_groups() {
+	public function ajax_get_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
 		$post_id = absint( $_POST['post_id'] );
@@ -443,42 +378,14 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Handle AJAX requests for the AD groups attached to an individual post.
-	 */
-	public function ajax_get_editor_groups() {
-		check_ajax_referer( 'wsu-sso-ad-groups' );
-
-		$post_id = absint( $_POST['post_id'] );
-		$ad_groups = (array) get_post_meta( $post_id, '_ad_editor_groups', true );
-
-		$return_groups = array();
-
-		foreach ( $ad_groups as $group ) {
-			$this_group = array();
-
-			// We may have a cached record of the AD group containing more detailed information.
-			// If not, we just use the DN for both DN and display name.
-			if ( $cached_group = wp_cache_get( md5( $group ), 'wsuwp-ad' ) ) {
-				$this_group = $cached_group;
-			} else {
-				$this_group['dn'] = $group;
-				$this_group['display_name'] = $group;
-			}
-
-			$this_group['selected_class'] = 'ad-group-selected';
-			$return_groups[] = $this_group;
-		}
-
-		echo wp_json_encode( $return_groups );
-		die();
-	}
-
-	/**
 	 * Save any changes made to a list of visibility groups assigned to a post.
+	 *
+	 * @todo store editors in _ad_editor_groups, viewers in _content_visibility_groups
+	 * @todo back-compat way of changing those names ^
 	 *
 	 * @since 0.1.0
 	 */
-	public function ajax_set_viewer_groups() {
+	public function ajax_set_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
 		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
@@ -498,33 +405,14 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Handle an AJAX request to save a list of AD groups to a post.
-	 */
-	public function ajax_set_editor_groups() {
-		check_ajax_referer( 'wsu-sso-ad-groups' );
-
-		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
-			wp_send_json_error( 'Invalid post ID.' );
-		}
-
-		if ( ! isset( $_POST['ad_groups'] ) || empty( $_POST['ad_groups'] ) ) {
-			wp_send_json_success( 'No groups passed. Success.' );
-		}
-
-		$post_id = absint( $_POST['post_id'] );
-		$ad_groups = array_filter( $_POST['ad_groups'], 'sanitize_text_field' );
-
-		update_post_meta( $post_id, '_ad_editor_groups', $ad_groups );
-
-		wp_send_json_success( 'Groups saved.' );
-	}
-
-	/**
 	 * Retrieve a list of groups matching the provided search terms from an AJAX request.
+	 *
+	 * @todo store editors in _ad_editor_groups, viewers in _content_visibility_groups
+	 * @todo back-compat way of changing those names ^
 	 *
 	 * @since 0.1.0
 	 */
-	public function ajax_search_viewer_groups() {
+	public function ajax_search_groups() {
 		check_ajax_referer( 'wsu-visibility-groups' );
 
 		$search_text = sanitize_text_field( $_POST['visibility_group'] );
@@ -573,59 +461,5 @@ class WSUWP_Content_Visibility {
 		}
 
 		wp_send_json_success( $return_groups );
-	}
-
-	/**
-	 * Search Active Directory for a list of groups matching a POSTed request.
-	 */
-	public function ajax_search_editor_groups() {
-		check_ajax_referer( 'wsu-sso-ad-groups' );
-
-		$search_text = sanitize_text_field( $_POST['ad_group'] );
-
-		if ( empty( $search_text ) ) {
-			wp_send_json_error( 'Empty search text was submitted.' );
-		}
-
-		if ( 1 === mb_strlen( $search_text ) ) {
-			wp_send_json_error( 'Please provide more than one character.' );
-		}
-
-		$post_id = absint( $_POST['post_id'] );
-
-		if ( 0 === $post_id ) {
-			$current_groups = array();
-		} else {
-			$current_groups = get_post_meta( $post_id, '_ad_editor_groups', true );
-		}
-
-		$groups = wp_cache_get( md5( $search_text ), 'wsuwp-ad-search' );
-
-		if ( ! $groups ) {
-			/**
-			 * Filter the editor groups attached to a search term.
-			 *
-			 * @since 0.2.0
-			 *
-			 * @param array  $groups      Group result data.
-			 * @param string $search_text Text used to search for a group.
-			 * @param int     $post_id     ID of the post being edited.
-			 */
-			$groups = apply_filters( 'content_visibility_editor_groups_search', $groups, $search_text, $post_id );
-
-			// Cache AD group search results for 10 minutes.
-			wp_cache_add( md5( $search_text ), $groups, 'wsuwp-ad-search', 600 );
-		}
-
-		$return_groups = array();
-
-		foreach ( $groups as $group ) {
-			$group['selected_class'] = in_array( $group['id'], (array) $current_groups, true ) ? 'ad-group-selected' : '';
-
-			$return_groups[] = $group;
-		}
-
-		echo wp_json_encode( $return_groups );
-		die();
 	}
 }

@@ -1,10 +1,10 @@
-/* global Backbone, _, ajaxurl, wsuContentViewerGroups_nonce */
-var wsuContentViewers = wsuContentViewers || {};
+/* global Backbone, _, ajaxurl, wsuContentVisibilityGroups_nonce */
+var wsuContentVisibility = wsuContentVisibility || {};
 
-( function( window, Backbone, $, _, wsuContentViewers ) {
+( function( window, Backbone, $, _, wsuContentVisibility ) {
 	"use strict";
 
-	wsuContentViewers.appView = Backbone.View.extend( {
+	wsuContentVisibility.appView = Backbone.View.extend( {
 
 		/**
 		 * Primary container to work with. We add this via meta box.
@@ -45,7 +45,7 @@ var wsuContentViewers = wsuContentViewers || {};
 		initialize: function() {
 
 			// Convert the JSON object we receive from the document to an array.
-			this.groups = $.map( window.wsuContentViewerGroups, function( el ) { return el; } );
+			this.groups = $.map( window.wsuContentVisibilityGroups, function( el ) { return el; } );
 			this.groups_modified = this.groups;
 		},
 
@@ -60,7 +60,7 @@ var wsuContentViewers = wsuContentViewers || {};
 		addOne: function( group, area ) {
 			var view;
 
-			view = new wsuContentViewers.groupView( { model: group } );
+			view = new wsuContentVisibility.groupView( { model: group } );
 
 			$( "#visibility-" + area + "-group-list" ).find( ".visibility-group-results" ).append( view.render().el );
 		},
@@ -84,7 +84,7 @@ var wsuContentViewers = wsuContentViewers || {};
 		getCurrentGroups: function() {
 			var data = {
 				"action": "get_content_visibility_groups",
-				"_ajax_nonce": wsuContentViewerGroups_nonce,
+				"_ajax_nonce": wsuContentVisibilityGroups_nonce,
 				"post_id": $( "#post_ID" ).val()
 			};
 
@@ -98,7 +98,7 @@ var wsuContentViewers = wsuContentViewers || {};
 					var new_groups = [];
 					response_data = response.data;
 					$( response_data ).each( function( item ) {
-						var group = new wsuContentViewers.group( {
+						var group = new wsuContentVisibility.group( {
 							groupID: response_data[ item ].id,
 							groupName: response_data[ item ].display_name,
 							memberCount: response_data[ item ].member_count,
@@ -106,7 +106,7 @@ var wsuContentViewers = wsuContentViewers || {};
 							selectedClass: response_data[ item ].selected_class
 						} );
 						new_groups.push( response_data[ item ].id );
-						wsuContentViewers.app.addOne( group, "current" );
+						wsuContentVisibility.app.addOne( group, "current" );
 					} );
 					this.groups = new_groups;
 				}
@@ -161,7 +161,7 @@ var wsuContentViewers = wsuContentViewers || {};
 
 			var data = {
 				"action": "search_content_visibility_groups",
-				"_ajax_nonce": wsuContentViewerGroups_nonce,
+				"_ajax_nonce": wsuContentVisibilityGroups_nonce,
 				"post_id": $( "#post_ID" ).val(),
 				"visibility_group": $( "#visibility-search-term" ).val()
 			};
@@ -169,7 +169,7 @@ var wsuContentViewers = wsuContentViewers || {};
 			var response_data;
 
 			$.post( ajaxurl, data, function( response ) {
-				wsuContentViewers.app.removeSearchSpinner();
+				wsuContentVisibility.app.removeSearchSpinner();
 
 				if ( response.success === false ) {
 					$( ".visibility-group-results" ).html( '<div class="no-group-results">Error: ' + response.data + "</div>" );
@@ -180,14 +180,14 @@ var wsuContentViewers = wsuContentViewers || {};
 						$( ".visibility-group-results" ).html( '<div class="no-group-results">No matching results...</div>' );
 					} else {
 						$( response_data ).each( function( item ) {
-							var group = new wsuContentViewers.group( {
+							var group = new wsuContentVisibility.group( {
 								groupID: response_data[ item ].id,
 								groupName: response_data[ item ].display_name,
 								memberCount: response_data[ item ].member_count,
 								memberList: response_data[ item ].member_list,
 								selectedClass: response_data[ item ].selected_class
 							} );
-							wsuContentViewers.app.addOne( group, "find" );
+							wsuContentVisibility.app.addOne( group, "find" );
 						} );
 					}
 				}
@@ -219,7 +219,7 @@ var wsuContentViewers = wsuContentViewers || {};
 		saveGroups: function() {
 			var data = {
 				"action": "set_content_visibility_groups",
-				"_ajax_nonce": wsuContentViewerGroups_nonce,
+				"_ajax_nonce": wsuContentVisibilityGroups_nonce,
 				"post_id": $( "#post_ID" ).val(),
 				"visibility_groups": this.groups_modified
 			};
@@ -238,11 +238,11 @@ var wsuContentViewers = wsuContentViewers || {};
 		 * @param response
 		 */
 		saveGroupResponse: function() {
-			wsuContentViewers.app.getCurrentGroups();
-			wsuContentViewers.app.showCurrentList();
-			wsuContentViewers.app.clearCurrentList();
-			wsuContentViewers.app.clearSearchList();
-			wsuContentViewers.app.$( "#visibility-search-term" ).val( "" );
+			wsuContentVisibility.app.getCurrentGroups();
+			wsuContentVisibility.app.showCurrentList();
+			wsuContentVisibility.app.clearCurrentList();
+			wsuContentVisibility.app.clearSearchList();
+			wsuContentVisibility.app.$( "#visibility-search-term" ).val( "" );
 		},
 
 		/**
@@ -388,4 +388,4 @@ var wsuContentViewers = wsuContentViewers || {};
 			this.$( "#visibility-search-term" ).val( "" );
 		}
 	} );
-} )( window, Backbone, jQuery, _, wsuContentViewers );
+} )( window, Backbone, jQuery, _, wsuContentVisibility );
