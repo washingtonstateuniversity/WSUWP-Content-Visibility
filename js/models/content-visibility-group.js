@@ -10,7 +10,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 			groupName: "",
 			memberCount: 0,
 			memberList: "",
-			selectedClass: ""
+			selectedViewer: "",
+			selectedEditor: ""
 		}
 	} );
 

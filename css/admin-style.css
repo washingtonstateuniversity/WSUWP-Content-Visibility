@@ -15,15 +15,14 @@
 }
 
 .visibility-group-overlay-wrapper {
-	position: fixed !important;
-	width: 64%;
-	height: 75%;
-	max-height: 500px;
-	margin-left: -32%;
-	top: 100px !important;
-	left: 50% !important;
-	min-height: 150px !important;
-	padding-bottom: 20px !important;
+	position: fixed;
+	width: 64vw;
+	height: 75vh;
+	margin-left: -32vw;
+	top: 10vh;
+	left: 50vw;
+	min-height: 150px;
+	padding-bottom: 20px;
 	background-color: #fff;
 	-webkit-box-shadow: 0 3px 6px rgba(0,0,0,.3);
 	box-shadow: 0 3px 6px rgba(0,0,0,.3);
@@ -71,11 +70,10 @@
 }
 
 .visibility-group-overlay-body {
-	padding: 5px 20px 20px 20px !important;
+	padding: 5px 20px 20px 20px!important;
 	clear: both;
 	overflow-y: hidden;
-	height: 100%;
-	max-height: 430px;
+	height: calc( 100% - 90px);
 }
 
 .visibility-group-overlay-open {
@@ -193,8 +191,7 @@
 .visibility-group-list {
 	display: none;
 	width: 100%;
-	height: 100%;
-	max-height: 385px;
+	height: calc(100% - 50px);
 	margin-top: 25px;
 }
 
@@ -224,8 +221,7 @@
 
 .visibility-group-results {
 	clear: left;
-	height: 100%;
-	max-height: 350px;
+	height: calc(100% - 40px);
 	border: 1px solid #bbb;
 	overflow: auto;
 }

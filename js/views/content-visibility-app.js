@@ -103,7 +103,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 							groupName: response_data[ item ].display_name,
 							memberCount: response_data[ item ].member_count,
 							memberList: response_data[ item ].member_list,
-							selectedClass: response_data[ item ].selected_class
+							selectedViewer: response_data[ item ].selected_class,
+							selectedEditor: response_data[ item ].selected_editor
 						} );
 						new_groups.push( response_data[ item ].id );
 						wsuContentVisibility.app.addOne( group, "current" );
@@ -185,7 +186,8 @@ var wsuContentVisibility = wsuContentVisibility || {};
 								groupName: response_data[ item ].display_name,
 								memberCount: response_data[ item ].member_count,
 								memberList: response_data[ item ].member_list,
-								selectedClass: response_data[ item ].selected_class
+								selectedViewer: response_data[ item ].selected_class,
+								selectedEditor: response_data[ item ].selected_editor
 							} );
 							wsuContentVisibility.app.addOne( group, "find" );
 						} );
