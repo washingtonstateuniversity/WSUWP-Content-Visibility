@@ -9,13 +9,13 @@ var wsuContentVisibility = wsuContentVisibility || {};
 		/**
 		 * Primary container to work with. We add this via meta box.
 		 */
-		el: "#wsuwp-content-viewers-box",
+		el: "#wsuwp-content-visibility-box",
 
 		/**
 		 * Setup the events we manage in this plugin.
 		 */
 		events: {
-			"click #visibility-group-manage": "openGroupModal",
+			"click #manage-visibility-groups": "openGroupModal",
 			"click #visibility-group-search": "searchGroups",
 			"click #visibility-save-groups": "saveGroups",
 			"click #visibility-cancel-groups": "cancelGroupSearch",
