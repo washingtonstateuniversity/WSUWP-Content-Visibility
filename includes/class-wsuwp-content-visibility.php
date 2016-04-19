@@ -244,7 +244,7 @@ class WSUWP_Content_Visibility {
 			<div class="visibility-group-overlay-wrapper">
 				<div class="visibility-group-overlay-header">
 					<div class="visibility-group-overlay-title">
-						<h3>Manage Visibility</h3>
+						<h3>Manage Content Visibility</h3>
 					</div>
 					<div class="visibility-group-overlay-close">Close</div>
 				</div>
@@ -270,9 +270,8 @@ class WSUWP_Content_Visibility {
 		</div>
 		<div class="clear"></div>
 		<script type="text/template" id="visibility-group-template">
-			<div class="visibility-group-single">
-				<div class="visibility-viewer-select <%= selectedViewer %>" data-group-id="<%= groupID %>"></div>
-				<div class="visibility-editor-select <%= selectedEditor %>" data-group-id="<%= groupID %>"></div>
+				<div class="visibility-select-box visibility-viewer-select <%= selectedViewer %>" data-group-id="<%= groupID %>"></div>
+				<div class="visibility-select-box visibility-editor-select <%= selectedEditor %>" data-group-id="<%= groupID %>"></div>
 				<div class="visibility-group-name"><%= groupName %></div>
 				<div class="visibility-group-member-count">(<%= memberCount %> members)</div>
 				<ul class="visibility-group-members">
@@ -280,8 +279,6 @@ class WSUWP_Content_Visibility {
 					<li><%= memberList[member] %></li>
 					<% } %>
 				</ul>
-				<div class="clear"></div>
-			</div>
 		</script>
 		<?php
 	}

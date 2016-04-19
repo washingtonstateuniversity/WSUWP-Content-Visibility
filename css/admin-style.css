@@ -93,6 +93,7 @@
 }
 
 .visibility-group-single {
+	display: flex;
 	font-size: 14px;
 	line-height: 1.3rem;
 	padding: 8px 5px 4px 5px;
@@ -108,14 +109,21 @@
 	background: #f0f8ff;
 }
 
-.visibility-group-member-count {
-	width: 110px;
-	float: left;
-	margin-left: 10px;
+.visibility-select-box {
+	flex: 1 0 auto;
+	border: 1px solid #ccc;
+	max-width: 25px;
+	height: 25px;
+	margin: 0 10px;
 }
 
 .visibility-group-name {
-	float: left;
+	flex-grow: 1;
+}
+
+.visibility-group-member-count {
+	flex: 1 0 0;
+	max-width: 100px;
 }
 
 .visibility-group-members {
@@ -159,12 +167,12 @@
 
 .visibility-group-selected:after {
 	position: absolute;
-	content: "\f147";
-	font-family: "Dashicons";
-	font-size: 34px;
+	content: "\f335";
+	font-family: Dashicons;
+	font-size: 45px;
 	color: #1e8cbe;
-	top: 2px;
-	left: -7px;
+	top: 3px;
+	left: -10px;
 }
 
 .visibility-group-search-area {

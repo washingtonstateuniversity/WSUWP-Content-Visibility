@@ -5,6 +5,7 @@ var wsuContentVisibility = wsuContentVisibility || {};
 	"use strict";
 
 	wsuContentVisibility.groupView = Backbone.View.extend( {
+		className: 'visibility-group-single',
 
 		// Cache the template function for a single item.
 		template: _.template( $( "#visibility-group-template" ).html() ),
