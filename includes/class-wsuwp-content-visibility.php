@@ -273,12 +273,6 @@ class WSUWP_Content_Visibility {
 				<div class="visibility-select-box visibility-viewer-select <%= selectedViewer %>" data-group-id="<%= groupID %>"></div>
 				<div class="visibility-select-box visibility-editor-select <%= selectedEditor %>" data-group-id="<%= groupID %>"></div>
 				<div class="visibility-group-name"><%= groupName %></div>
-				<div class="visibility-group-member-count">(<%= memberCount %> members)</div>
-				<ul class="visibility-group-members">
-					<% for(var member in memberList) { %>
-					<li><%= memberList[member] %></li>
-					<% } %>
-				</ul>
 		</script>
 		<?php
 	}
@@ -340,21 +334,39 @@ class WSUWP_Content_Visibility {
 			wp_send_json_error( 'Invalid post ID.' );
 		}
 
-		$groups = get_post_meta( $post_id, '_content_visibility_groups', true );
+		/**
+		 * Filter the default groups that will always display in the interface.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $group_details Array of details, containing only basic information by default.
+		 */
+		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
 
-		if ( empty( $groups ) ) {
-			wp_send_json_success( array() );
-		}
+		$viewer_groups = get_post_meta( $post_id, '_content_visibility_viewer_groups', true );
+		$editor_groups = get_post_meta( $post_id, '_content_visibility_editor_groups', true );
 
 		$return_groups = array();
 
-		foreach ( $groups as $group ) {
+		foreach( $default_groups as $group ) {
+			$viewer_selected = '';
+			$editor_selected = '';
+
+			if ( in_array( $group['id'], $viewer_groups ) ) {
+				$viewer_selected = 'visibility-viewer-group-selected';
+			}
+
+			if ( in_array( $group['id'], $editor_groups ) ) {
+				$editor_selected = 'visibility-editor-group-selected';
+			}
+
 			$group_details = array(
-				'id' => $group,
-				'display_name' => $group,
-				'member_count' => '',
-				'member_list' => '',
+				'id' => $group['id'],
+				'display_name' => $group['name'],
+				'selected_viewer' => $viewer_selected,
+				'selected_editor' => $editor_selected,
 			);
+
 			/**
 			 * Filter the details associated with assigned visibility groups.
 			 *
@@ -363,9 +375,6 @@ class WSUWP_Content_Visibility {
 			 * @param array $group_details Array of details, containing only basic information by default.
 			 */
 			$group_details = apply_filters( 'content_visibility_group_details', $group_details );
-
-			// Current groups should always have the selected class enabled.
-			$group_details['selected_class'] = 'visibility-group-selected';
 
 			$return_groups[] = $group_details;
 		}

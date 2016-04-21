@@ -165,7 +165,8 @@
 	margin-right: 10px;
 }
 
-.visibility-group-selected:after {
+.visibility-viewer-group-selected:after,
+.visibility-editor-group-selected:after {
 	position: absolute;
 	content: "\f335";
 	font-family: Dashicons;
