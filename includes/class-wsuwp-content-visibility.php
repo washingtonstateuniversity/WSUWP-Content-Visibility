@@ -348,15 +348,15 @@ class WSUWP_Content_Visibility {
 
 		$return_groups = array();
 
-		foreach( $default_groups as $group ) {
+		foreach ( $default_groups as $group ) {
 			$viewer_selected = '';
 			$editor_selected = '';
 
-			if ( in_array( $group['id'], $viewer_groups ) ) {
+			if ( in_array( $group['id'], $viewer_groups, true ) ) {
 				$viewer_selected = 'visibility-viewer-group-selected';
 			}
 
-			if ( in_array( $group['id'], $editor_groups ) ) {
+			if ( in_array( $group['id'], $editor_groups, true ) ) {
 				$editor_selected = 'visibility-editor-group-selected';
 			}
 
