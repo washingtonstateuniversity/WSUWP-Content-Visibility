@@ -38,12 +38,9 @@ class WSUWP_Content_Visibility {
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_filter( 'user_has_cap', array( $this, 'allow_edit_content' ), 10, 4 );
 
-		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 1 );
-		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
 
-		add_action( 'wp_ajax_get_content_visibility_groups', array( $this, 'ajax_get_groups' ) );
-		add_action( 'wp_ajax_set_content_visibility_groups', array( $this, 'ajax_set_groups' ) );
-		add_action( 'wp_ajax_search_content_visibility_groups', array( $this, 'ajax_search_groups' ) );
+		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}
 
 	/**
@@ -223,116 +220,27 @@ class WSUWP_Content_Visibility {
 	 * @since 0.1.0
 	 *
 	 * @param string  $post_type The slug of the current post type being edited.
+	 * @param WP_Post $post      The current post.
 	 */
-	public function add_meta_boxes( $post_type ) {
+	public function add_meta_boxes( $post_type, $post ) {
 		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) ) {
-			add_meta_box( 'wsuwp-content-visibility-box', 'Content Visibility', array( $this, 'display_meta_box' ), null, 'side', 'high' );
+			add_meta_box( 'wsuwp-content-editors-box', 'Content Editors', array( $this, 'display_editors_meta_box' ), null, 'side', 'high' );
+
+			if ( 'private' === $post->post_status ) {
+				add_meta_box( 'wsuwp-content-viewers-box', 'Content Viewers', array( $this, 'display_viewers_meta_box' ), null, 'side', 'high' );
+			}
 		}
 	}
 
 	/**
-	 * Display the meta box used to search for groups and users to add as viewers and editors
-	 * of a piece of content.
+	 * Display the meta box used to determine which groups of users can view a piece of content.
 	 *
 	 * @param WP_Post $post
 	 */
-	public function display_meta_box( $post ) {
+	public function display_viewers_meta_box( $post ) {
 		?>
-		<p class="description">Manage authorized viewers and editors of this content.</p>
-		<input type="button" id="manage-visibility-groups" class="primary button" value="Manage Visibility" />
-		<div class="visibility-group-overlay">
-			<div class="visibility-group-overlay-wrapper">
-				<div class="visibility-group-overlay-header">
-					<div class="visibility-group-overlay-title">
-						<h3>Manage Content Visibility</h3>
-					</div>
-					<div class="visibility-group-overlay-close">Close</div>
-				</div>
-				<div class="visibility-group-overlay-body">
-					<div class="visibility-group-search-area">
-						<input type="text" id="visibility-search-term" name="visibility_search_term" class="widefat" />
-						<input type="button" id="visibility-group-search" class="button button-primary button-large" value="Find" />
-					</div>
-					<div class="visibility-save-cancel">
-						<input type="button" id="visibility-save-groups" class="button button-primary button-large" value="Save" />
-						<input type="button" id="visibility-cancel-groups" class="button button-secondary button-large" value="Cancel" />
-					</div>
-					<div id="visibility-current-group-list" class="visibility-group-list visibility-group-list-open">
-						<div id="visibility-current-group-tab" class="visibility-group-tab visibility-current-tab">Currently Assigned</div>
-						<div class="visibility-group-results"></div>
-					</div>
-					<div id="visibility-find-group-list" class="visibility-group-list">
-						<div id="visibility-find-group-tab" class="visibility-group-tab">Group Results</div>
-						<div class="visibility-group-results pending-results"></div>"
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="clear"></div>
-		<script type="text/template" id="visibility-group-template">
-				<div class="visibility-select-box visibility-viewer-select <%= selectedViewer %>" data-group-id="<%= groupID %>"></div>
-				<div class="visibility-select-box visibility-editor-select <%= selectedEditor %>" data-group-id="<%= groupID %>"></div>
-				<div class="visibility-group-name"><%= groupName %></div>
-		</script>
+		<p class="description">Manage authorized viewers of this content.</p>
 		<?php
-	}
-
-	/**
-	 * Enqueue Javascript required in the admin on support post type screens.
-	 *
-	 * @todo capabilities
-	 *
-	 * @since 0.1.0
-	 */
-	public function admin_enqueue_scripts() {
-		if ( ! isset( get_current_screen()->post_type ) ) {
-			return;
-		}
-
-		if ( ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-visibility' ) ) {
-			return;
-		}
-
-		wp_enqueue_style( 'wsuwp-content-visibility', plugins_url( 'css/admin-style.min.css', dirname( __FILE__ ) ), array(), false );
-
-		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
-			wp_enqueue_script( 'wsuwp-content-visibility-model', plugins_url( 'js/models/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-			wp_enqueue_script( 'wsuwp-content-visibility-app', plugins_url( 'js/views/content-visibility-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-			wp_enqueue_script( 'wsuwp-content-visibility-group', plugins_url( 'js/views/content-visibility-group.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-
-			wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility-app.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-		} else {
-			wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', dirname( __FILE__ ) ), array( 'backbone' ), false, true );
-		}
-
-		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
-		$ajax_nonce = wp_create_nonce( 'wsu-visibility-groups' );
-
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuContentVisibilityGroups', $data );
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuContentVisibilityGroups_nonce', $ajax_nonce );
-
-		//$data = get_post_meta( get_the_ID(), '_ad_editor_groups', true );
-		//wp_localize_script( 'wsuwp-content-visibility', 'wsuContentEditorGroups', $data );
-		//wp_localize_script( 'wsuwp-content-visibility', 'wsuContentEditorGroups_nonce', $ajax_nonce );
-	}
-
-	/**
-	 * Retrieve a current list of groups attached to a post for display in the
-	 * admin modal.
-	 *
-	 * @todo store editors in _ad_editor_groups, viewers in _content_visibility_groups
-	 * @todo back-compat way of changing those names ^
-	 *
-	 * @since 0.1.0
-	 */
-	public function ajax_get_groups() {
-		check_ajax_referer( 'wsu-visibility-groups' );
-
-		$post_id = absint( $_POST['post_id'] );
-
-		if ( 0 === $post_id ) {
-			wp_send_json_error( 'Invalid post ID.' );
-		}
 
 		/**
 		 * Filter the default groups that will always display in the interface.
@@ -343,28 +251,18 @@ class WSUWP_Content_Visibility {
 		 */
 		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
 
-		$viewer_groups = get_post_meta( $post_id, '_content_visibility_viewer_groups', true );
-		$editor_groups = get_post_meta( $post_id, '_content_visibility_editor_groups', true );
-
-		$return_groups = array();
+		$viewer_groups = (array) get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
 
 		foreach ( $default_groups as $group ) {
-			$viewer_selected = '';
-			$editor_selected = '';
+			$viewer_selected = false;
 
 			if ( in_array( $group['id'], $viewer_groups, true ) ) {
-				$viewer_selected = 'visibility-viewer-group-selected';
-			}
-
-			if ( in_array( $group['id'], $editor_groups, true ) ) {
-				$editor_selected = 'visibility-editor-group-selected';
+				$viewer_selected = true;
 			}
 
 			$group_details = array(
 				'id' => $group['id'],
 				'display_name' => $group['name'],
-				'selected_viewer' => $viewer_selected,
-				'selected_editor' => $editor_selected,
 			);
 
 			/**
@@ -376,95 +274,126 @@ class WSUWP_Content_Visibility {
 			 */
 			$group_details = apply_filters( 'content_visibility_group_details', $group_details );
 
-			$return_groups[] = $group_details;
+			?>
+			<div class="content-visibility-group-selection">
+				<input type="checkbox" id="view_<?php echo esc_attr( $group_details['id'] ); ?>" name="content_view[<?php echo esc_attr( $group_details['id'] ); ?>]" <?php checked( $viewer_selected ); ?>>
+				<label for="view_<?php echo esc_attr( $group_details['id'] ); ?>"><?php echo esc_html( $group_details['display_name'] ); ?></label>
+			</div>
+			<?php
 		}
-
-		wp_send_json_success( $return_groups );
 	}
 
 	/**
-	 * Save any changes made to a list of visibility groups assigned to a post.
+	 * Display the meta box used to determine which groups of users can edit a piece of content.
 	 *
-	 * @todo store editors in _ad_editor_groups, viewers in _content_visibility_groups
-	 * @todo back-compat way of changing those names ^
-	 *
-	 * @since 0.1.0
+	 * @param WP_Post $post
 	 */
-	public function ajax_set_groups() {
-		check_ajax_referer( 'wsu-visibility-groups' );
+	public function display_editors_meta_box( $post ) {
+		?>
+		<p class="description">Manage authorized editors of this content.</p>
+		<?php
+		wp_nonce_field( 'save-content-visibility', '_content_visibility_nonce' );
 
-		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
-			wp_send_json_error( 'Invalid post ID.' );
-		}
+		/**
+		 * Filter the default groups that will always display in the interface.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $group_details Array of details, containing only basic information by default.
+		 */
+		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
 
-		if ( ! isset( $_POST['visibility_groups'] ) || empty( $_POST['visibility_groups'] ) ) {
-			wp_send_json_success( 'No changes.' );
-		}
+		$editor_groups = (array) get_post_meta( $post->ID, '_content_visibility_editor_groups', true );
 
-		$post_id = absint( $_POST['post_id'] );
-		$group_ids = array_filter( $_POST['visibility_groups'], 'sanitize_text_field' );
+		foreach ( $default_groups as $group ) {
+			$editor_selected = false;
 
-		update_post_meta( $post_id, '_content_visibility_groups', $group_ids );
+			if ( in_array( $group['id'], $editor_groups, true ) ) {
+				$editor_selected = true;
+			}
 
-		wp_send_json_success( 'Changes saved.' );
-	}
+			$group_details = array(
+				'id' => $group['id'],
+				'display_name' => $group['name'],
+			);
 
-	/**
-	 * Retrieve a list of groups matching the provided search terms from an AJAX request.
-	 *
-	 * @todo store editors in _ad_editor_groups, viewers in _content_visibility_groups
-	 * @todo back-compat way of changing those names ^
-	 *
-	 * @since 0.1.0
-	 */
-	public function ajax_search_groups() {
-		check_ajax_referer( 'wsu-visibility-groups' );
-
-		$search_text = sanitize_text_field( $_POST['visibility_group'] );
-
-		if ( empty( $search_text ) ) {
-			wp_send_json_error( 'Empty search text was submitted.' );
-		}
-
-		if ( 1 === mb_strlen( $search_text ) ) {
-			wp_send_json_error( 'Please provide more than one character.' );
-		}
-
-		$post_id = absint( $_POST['post_id'] );
-
-		if ( 0 === $post_id ) {
-			$current_groups = array();
-		} else {
-			$current_groups = get_post_meta( $post_id, '_content_visibility_groups', true );
-		}
-
-		// Has this term been used recently?
-		$groups = wp_cache_get( md5( $search_text ), 'content-visibility' );
-
-		if ( ! $groups ) {
 			/**
-			 * Filter the groups attached to a search term.
+			 * Filter the details associated with assigned visibility groups.
 			 *
-			 * @since 0.2.0
+			 * @since 0.1.0
 			 *
-			 * @param array  $groups      Group result data.
-			 * @param string $search_text Text used to search for a group.
-			 * @param int     $post_id     ID of the post being edited.
+			 * @param array $group_details Array of details, containing only basic information by default.
 			 */
-			$groups = apply_filters( 'content_visibility_viewer_groups_search', $groups, $search_text, $post_id );
+			$group_details = apply_filters( 'content_visibility_group_details', $group_details );
 
-			// Cache a search term's results for an hour.
-			wp_cache_add( md5( $search_text ), $groups, 'content-visibility', 3600 );
+			?>
+			<div class="content-visibility-group-selection">
+				<input type="checkbox" id="edit_<?php echo esc_attr( $group_details['id'] ); ?>" name="content_edit[<?php echo esc_attr( $group_details['id'] ); ?>]" <?php checked( $editor_selected ); ?>>
+				<label for="edit_<?php echo esc_attr( $group_details['id'] ); ?>"><?php echo esc_html( $group_details['display_name'] ); ?></label>
+			</div>
+			<?php
+		}
+	}
+
+	/**
+	 * Save viewer and editor group data associated with a post.
+	 *
+	 * @param int     $post_id
+	 * @param WP_Post $post
+	 */
+	public function save_post( $post_id, $post ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
 		}
 
-		$return_groups = array();
-
-		foreach ( $groups as $group ) {
-			$group['selected_class'] = in_array( $group['id'], (array) $current_groups, true ) ? 'visibility-group-selected' : '';
-
-			$return_groups[] = $group;
+		if ( ! post_type_supports( $post->post_type, 'wsuwp-content-visibility' ) ) {
+			return;
 		}
 
-		wp_send_json_success( $return_groups );
+		if ( 'auto-draft' === $post->post_status ) {
+			return;
+		}
+
+		if ( ! isset( $_POST['content_view'] ) && ! isset( $_POST['content_edit'] ) ) {
+
+		}
+
+		if ( ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
+			return;
+		}
+
+		/**
+		 * Filter the default groups that will always display in the interface.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $group_details Array of details, containing only basic information by default.
+		 */
+		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
+		$default_group_ids = wp_list_pluck( $default_groups, 'id' );
+
+		if ( 'private' === $post->post_status ) {
+			$content_viewer_ids = isset( $_POST['content_view'] ) ? (array) $_POST['content_view'] : array();
+			$save_groups = array();
+
+			foreach( $content_viewer_ids as $content_viewer => $v ) {
+				if ( in_array( $content_viewer, $default_group_ids, true ) ) {
+					$save_groups[] = $content_viewer;
+				}
+			}
+
+			update_post_meta( $post_id, '_content_visibility_viewer_groups', $save_groups );
+		}
+
+		$content_editor_ids = isset( $_POST['content_edit'] ) ? (array) $_POST['content_edit'] : array();
+		$save_groups = array();
+
+		foreach( $content_editor_ids as $content_editor => $v ) {
+			if ( in_array( $content_editor, $default_group_ids, true ) ) {
+				$save_groups[] = $content_editor;
+			}
+		}
+
+		update_post_meta( $post_id, '_content_visibility_editor_groups', $save_groups );
 	}
 }
