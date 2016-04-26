@@ -240,6 +240,7 @@ class WSUWP_Content_Visibility {
 	public function display_viewers_meta_box( $post ) {
 		?>
 		<p class="description">Manage authorized viewers of this content.</p>
+		<input type="hidden" name="visibility_viewers_box" value="1" />
 		<?php
 
 		/**
@@ -291,6 +292,7 @@ class WSUWP_Content_Visibility {
 	public function display_editors_meta_box( $post ) {
 		?>
 		<p class="description">Manage authorized editors of this content.</p>
+		<input type="hidden" name="visibility_editors_box" value="1" />
 		<?php
 		wp_nonce_field( 'save-content-visibility', '_content_visibility_nonce' );
 
@@ -354,7 +356,10 @@ class WSUWP_Content_Visibility {
 			return;
 		}
 
-		//@todo Add a hidden input that is always submitted with the meta box so that we don't rely on possibly missing checkboxes
+		// Neither meta box provided information.
+		if ( ! isset( $_POST['visibility_editors_box'] ) && ! isset( $_POST['visibility_viewers_box'] ) ) {
+			return;
+		}
 
 		if ( ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
 			return;
@@ -370,7 +375,7 @@ class WSUWP_Content_Visibility {
 		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
 		$default_group_ids = wp_list_pluck( $default_groups, 'id' );
 
-		if ( 'private' === $post->post_status ) {
+		if ( 'private' === $post->post_status && isset( $_POST['visibility_viewers_box'] ) && 1 === absint( $_POST['visibility_viewers_box'] ) ) {
 			$content_viewer_ids = isset( $_POST['content_view'] ) ? (array) $_POST['content_view'] : array();
 			$save_groups = array();
 
@@ -381,6 +386,10 @@ class WSUWP_Content_Visibility {
 			}
 
 			update_post_meta( $post_id, '_content_visibility_viewer_groups', $save_groups );
+		}
+
+		if ( ! isset( $_POST['visibility_editors_box'] ) && 1 !== absint( $_POST['visibility_editors_box'] ) ) {
+			return;
 		}
 
 		$content_editor_ids = isset( $_POST['content_edit'] ) ? (array) $_POST['content_edit'] : array();
