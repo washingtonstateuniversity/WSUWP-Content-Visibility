@@ -354,9 +354,7 @@ class WSUWP_Content_Visibility {
 			return;
 		}
 
-		if ( ! isset( $_POST['content_view'] ) && ! isset( $_POST['content_edit'] ) ) {
-
-		}
+		//@todo Add a hidden input that is always submitted with the meta box so that we don't rely on possibly missing checkboxes
 
 		if ( ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
 			return;
