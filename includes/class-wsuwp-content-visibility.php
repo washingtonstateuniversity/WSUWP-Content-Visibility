@@ -374,7 +374,7 @@ class WSUWP_Content_Visibility {
 			$content_viewer_ids = isset( $_POST['content_view'] ) ? (array) $_POST['content_view'] : array();
 			$save_groups = array();
 
-			foreach( $content_viewer_ids as $content_viewer => $v ) {
+			foreach ( $content_viewer_ids as $content_viewer => $v ) {
 				if ( in_array( $content_viewer, $default_group_ids, true ) ) {
 					$save_groups[] = $content_viewer;
 				}
@@ -386,7 +386,7 @@ class WSUWP_Content_Visibility {
 		$content_editor_ids = isset( $_POST['content_edit'] ) ? (array) $_POST['content_edit'] : array();
 		$save_groups = array();
 
-		foreach( $content_editor_ids as $content_editor => $v ) {
+		foreach ( $content_editor_ids as $content_editor => $v ) {
 			if ( in_array( $content_editor, $default_group_ids, true ) ) {
 				$save_groups[] = $content_editor;
 			}
