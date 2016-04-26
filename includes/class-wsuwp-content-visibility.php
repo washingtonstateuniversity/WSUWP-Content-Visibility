@@ -80,7 +80,8 @@ class WSUWP_Content_Visibility {
 				return $caps;
 			}
 
-			$groups = get_post_meta( $post->ID, '_content_visibility_groups', true );
+			$groups = get_post_meta( $post->ID, '_content_visibility_groups', true ); // @todo something back-compat here
+			$groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
 
 			// No content visible groups have been assigned to this post.
 			if ( empty( $groups ) ) {
