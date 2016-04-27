@@ -34,12 +34,8 @@ class WSUWP_Content_Visibility {
 	 */
 	public function setup_hooks() {
 		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
-
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
-		add_filter( 'user_has_cap', array( $this, 'allow_edit_content' ), 10, 4 );
-
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
-
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}
 
@@ -119,100 +115,6 @@ class WSUWP_Content_Visibility {
 		return $caps;
 	}
 
-
-	/**
-	 * Determine edit page capability based on the AD group a user is a member of if the
-	 * page has been restricted to specific AD groups. If the user is not a site, network,
-	 * or group admin, we need to check:
-	 *
-	 *     - edit_post, which has meta caps edit_others_pages and edit_published pages
-	 *     - edit_page, which has meta caps edit_others_pages and edit_published pages
-	 *     - publish_pages
-	 *     - edit_others_pages is also checked on its own.
-	 *
-	 * @param array $allcaps All current capabilities assigned to the user.
-	 * @param array $caps
-	 * @param array $args    Additional capabilities being checked.
-	 * @param WP_User $user  The current user being checked.
-	 *
-	 * @return array Modified list of capabilities assigned to the user.
-	 */
-	public function allow_edit_content( $allcaps, $caps, $args, $user ) {
-		// Catch current administrators and editors.
-		$user_can_create_pages = array_intersect( array( 'administrator', 'editor' ), $user->roles );
-
-		/*
-		 * Administrators and Editors can still create new pages, but we need
-		 * to ensure that others with individual page access cannot create
-		 * new pages themselves.
-		 */
-		if ( 'create_pages' === $args[0] ) {
-			if ( ! empty( $user_can_create_pages ) ) {
-				$allcaps['create_pages'] = true;
-			}
-			return $allcaps;
-		}
-
-		/**
-		 * We're a little crazy, so we'll give everyone with a role on the site
-		 * access to the pages menu. Really the individual page cap checks should
-		 * take care of this and it ends up being a list of pages on the site for
-		 * most users.
-		 */
-		if ( 'edit_pages' === $args[0] ) {
-			$allcaps['edit_pages'] = true;
-			return $allcaps;
-		}
-
-		/**
-		 * And now we check for individual page capabilities for anyone that is not an
-		 * Administrator or Editor on the site. This doesn't work for Subscribers, only
-		 * Contributors and Authors.
-		 */
-		if ( $user && empty( $user_can_create_pages ) && in_array( $args[0], array( 'edit_post', 'edit_page', 'publish_pages', 'edit_others_pages' ), true ) ) {
-			$post = get_post();
-
-			// We need a valid page before we can assign capabilities.
-			if ( ! $post ) {
-				return $allcaps;
-			}
-
-			// Retrieve the array of AD groups assigned to the current page.
-			$page_ad_groups = get_post_meta( $post->ID, '_ad_editor_groups', true );
-
-			// No additional AD groups have been assigned, return unaltered.
-			if ( empty( $page_ad_groups ) ) {
-				return $allcaps;
-			}
-
-			// The user must be an AD user for this to work.
-			$user_type = get_user_meta( $user->ID, '_wsuwp_sso_user_type', true );
-			if ( 'nid' !== $user_type ) {
-				return $allcaps;
-			}
-
-			// Retrieve the array of AD groups assigned to the user.
-			// @todo fix this whole area to be in WSUWP SSO
-			$user_ad_groups = WSUWP_SSO_Authentication()->get_user_ad_groups( $user );
-			$groups = array_intersect( $page_ad_groups, $user_ad_groups );
-
-			// No access if no intersection between the allowed groups and the user's groups.
-			if ( empty( $groups ) ) {
-				return $allcaps;
-			}
-
-			$allcaps['edit_post'] = true;
-			$allcaps['edit_page'] = true;
-			$allcaps['publish_pages'] = true;
-			$allcaps['edit_others_pages'] = true;
-			$allcaps['edit_published_pages'] = true;
-
-			return $allcaps;
-		}
-
-		return $allcaps;
-	}
-
 	/**
 	 * Add the meta boxes created by the plugin to supporting post types.
 	 *
@@ -224,12 +126,8 @@ class WSUWP_Content_Visibility {
 	 * @param WP_Post $post      The current post.
 	 */
 	public function add_meta_boxes( $post_type, $post ) {
-		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) ) {
-			add_meta_box( 'wsuwp-content-editors-box', 'Content Editors', array( $this, 'display_editors_meta_box' ), null, 'side', 'high' );
-
-			if ( 'private' === $post->post_status ) {
-				add_meta_box( 'wsuwp-content-viewers-box', 'Content Viewers', array( $this, 'display_viewers_meta_box' ), null, 'side', 'high' );
-			}
+		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) && 'private' === $post->post_status ) {
+			add_meta_box( 'wsuwp-content-viewers-box', 'Content Viewers', array( $this, 'display_viewers_meta_box' ), null, 'side', 'high' );
 		}
 	}
 
@@ -243,6 +141,7 @@ class WSUWP_Content_Visibility {
 		<p class="description">Manage authorized viewers of this content.</p>
 		<input type="hidden" name="visibility_viewers_box" value="1" />
 		<?php
+		wp_nonce_field( 'save-content-visibility', '_content_visibility_nonce' );
 
 		/**
 		 * Filter the default groups that will always display in the interface.
@@ -286,59 +185,6 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Display the meta box used to determine which groups of users can edit a piece of content.
-	 *
-	 * @param WP_Post $post
-	 */
-	public function display_editors_meta_box( $post ) {
-		?>
-		<p class="description">Manage authorized editors of this content.</p>
-		<input type="hidden" name="visibility_editors_box" value="1" />
-		<?php
-		wp_nonce_field( 'save-content-visibility', '_content_visibility_nonce' );
-
-		/**
-		 * Filter the default groups that will always display in the interface.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param array $group_details Array of details, containing only basic information by default.
-		 */
-		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
-
-		$editor_groups = (array) get_post_meta( $post->ID, '_content_visibility_editor_groups', true );
-
-		foreach ( $default_groups as $group ) {
-			$editor_selected = false;
-
-			if ( in_array( $group['id'], $editor_groups, true ) ) {
-				$editor_selected = true;
-			}
-
-			$group_details = array(
-				'id' => $group['id'],
-				'display_name' => $group['name'],
-			);
-
-			/**
-			 * Filter the details associated with assigned visibility groups.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param array $group_details Array of details, containing only basic information by default.
-			 */
-			$group_details = apply_filters( 'content_visibility_group_details', $group_details );
-
-			?>
-			<div class="content-visibility-group-selection">
-				<input type="checkbox" id="edit_<?php echo esc_attr( $group_details['id'] ); ?>" name="content_edit[<?php echo esc_attr( $group_details['id'] ); ?>]" <?php checked( $editor_selected ); ?>>
-				<label for="edit_<?php echo esc_attr( $group_details['id'] ); ?>"><?php echo esc_html( $group_details['display_name'] ); ?></label>
-			</div>
-			<?php
-		}
-	}
-
-	/**
 	 * Save viewer and editor group data associated with a post.
 	 *
 	 * @param int     $post_id
@@ -353,16 +199,11 @@ class WSUWP_Content_Visibility {
 			return;
 		}
 
-		if ( 'auto-draft' === $post->post_status ) {
+		if ( 'private' !== $post->post_status ) {
 			return;
 		}
 
-		// Neither meta box provided information.
-		if ( ! isset( $_POST['visibility_editors_box'] ) && ! isset( $_POST['visibility_viewers_box'] ) ) {
-			return;
-		}
-
-		if ( ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
+		if ( ! isset( $_POST['visibility_viewers_box'] ) || ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
 			return;
 		}
 
@@ -376,32 +217,15 @@ class WSUWP_Content_Visibility {
 		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
 		$default_group_ids = wp_list_pluck( $default_groups, 'id' );
 
-		if ( 'private' === $post->post_status && isset( $_POST['visibility_viewers_box'] ) && 1 === absint( $_POST['visibility_viewers_box'] ) ) {
-			$content_viewer_ids = isset( $_POST['content_view'] ) ? (array) $_POST['content_view'] : array();
-			$save_groups = array();
-
-			foreach ( $content_viewer_ids as $content_viewer => $v ) {
-				if ( in_array( $content_viewer, $default_group_ids, true ) ) {
-					$save_groups[] = $content_viewer;
-				}
-			}
-
-			update_post_meta( $post_id, '_content_visibility_viewer_groups', $save_groups );
-		}
-
-		if ( ! isset( $_POST['visibility_editors_box'] ) && 1 !== absint( $_POST['visibility_editors_box'] ) ) {
-			return;
-		}
-
-		$content_editor_ids = isset( $_POST['content_edit'] ) ? (array) $_POST['content_edit'] : array();
+		$content_viewer_ids = isset( $_POST['content_view'] ) ? (array) $_POST['content_view'] : array();
 		$save_groups = array();
 
-		foreach ( $content_editor_ids as $content_editor => $v ) {
-			if ( in_array( $content_editor, $default_group_ids, true ) ) {
-				$save_groups[] = $content_editor;
+		foreach ( $content_viewer_ids as $content_viewer => $v ) {
+			if ( in_array( $content_viewer, $default_group_ids, true ) ) {
+				$save_groups[] = $content_viewer;
 			}
 		}
 
-		update_post_meta( $post_id, '_content_visibility_editor_groups', $save_groups );
+		update_post_meta( $post_id, '_content_visibility_viewer_groups', $save_groups );
 	}
 }
