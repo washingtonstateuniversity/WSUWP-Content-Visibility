@@ -12,7 +12,11 @@ class WSUWP_Content_Visibility {
 	private static $instance;
 
 	/**
-	 * @var array Default groups supported by Content Visibility.
+	 * Provide a list of default groups supported by WSU Content Visibility.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var array
 	 */
 	var $default_groups = array(
 		array( 'id' => 'site-member', 'name' => 'Site Members' ),
@@ -143,6 +147,8 @@ class WSUWP_Content_Visibility {
 	/**
 	 * Display the meta box used to determine which groups of users can view a piece of content.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param WP_Post $post
 	 */
 	public function display_viewers_meta_box( $post ) {
@@ -181,6 +187,8 @@ class WSUWP_Content_Visibility {
 
 	/**
 	 * Save viewer and editor group data associated with a post.
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param int     $post_id
 	 * @param WP_Post $post
