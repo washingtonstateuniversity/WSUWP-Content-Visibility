@@ -4,13 +4,13 @@
 
 Control the visibility of content for groups of authenticated users.
 
+![](assets/screenshot-001.png)
+
 ## Overview
 
 WSU Content Visibility provides a general method to control visibility of a private post based on the groups a user belongs to. The plugin does not contain any default groups. Instead, custom code should be used to provide group and user associations through the provided hooks.
 
-![](assets/screenshot-001.png)
-
-For the list of groups to appear, the `post_status` of the post (or other post type) must be `private`.
+For a list of groups to appear, the `post_status` of the post (or other post type) must be `private`.
 
 ![](assets/screenshot-002.png)
 
