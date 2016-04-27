@@ -117,8 +117,6 @@ class WSUWP_Content_Visibility {
 	/**
 	 * Add the meta boxes created by the plugin to supporting post types.
 	 *
-	 * @todo capability checks
-	 *
 	 * @since 0.1.0
 	 *
 	 * @param string  $post_type The slug of the current post type being edited.
