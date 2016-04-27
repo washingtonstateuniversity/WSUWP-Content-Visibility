@@ -170,24 +170,10 @@ class WSUWP_Content_Visibility {
 				$viewer_selected = true;
 			}
 
-			$group_details = array(
-				'id' => $group['id'],
-				'display_name' => $group['name'],
-			);
-
-			/**
-			 * Filter the details associated with assigned visibility groups.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param array $group_details Array of details, containing only basic information by default.
-			 */
-			$group_details = apply_filters( 'content_visibility_group_details', $group_details );
-
 			?>
 			<div class="content-visibility-group-selection">
-				<input type="checkbox" id="view_<?php echo esc_attr( $group_details['id'] ); ?>" name="content_view[<?php echo esc_attr( $group_details['id'] ); ?>]" <?php checked( $viewer_selected ); ?>>
-				<label for="view_<?php echo esc_attr( $group_details['id'] ); ?>"><?php echo esc_html( $group_details['display_name'] ); ?></label>
+				<input type="checkbox" id="view_<?php echo esc_attr( $group['id'] ); ?>" name="content_view[<?php echo esc_attr( $group['id'] ); ?>]" <?php checked( $viewer_selected ); ?>>
+				<label for="view_<?php echo esc_attr( $group['id'] ); ?>"><?php echo esc_html( $group['name'] ); ?></label>
 			</div>
 			<?php
 		}
