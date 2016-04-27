@@ -101,4 +101,30 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 
 		$this->assertEquals( $filtered_caps, $actual_caps );
 	}
+
+	/**
+	 * If a user is a site member and the default group for site members is assigned to the post, then the
+	 * list of caps passed to allow_read_private_posts should change to return the read_posts cap for the post type.
+	 */
+	public function test_site_member_user_in_content_visibility_groups_default_groups() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'private' ) );
+		$user_id = $this->factory->user->create( array( 'user_login' => 'testsubscriber', 'role' => 'Subscriber' ) );
+
+		$post = get_post( $post_id );
+		$post_type = get_post_type_object( $post->post_type );
+
+		$caps = array( $post_type->cap->read_private_posts );
+		$filtered_caps = array( $post_type->cap->read );
+
+		$cap = 'read_post';
+		$args = array( $post->ID );
+
+		update_post_meta( $post->ID, '_content_visibility_viewer_groups', array( 'site-member' ) );
+
+		$content_visibility = WSUWP_Content_Visibility();
+
+		$actual_caps = $content_visibility->allow_read_private_posts( $caps, $cap, $user_id, $args );
+
+		$this->assertEquals( $filtered_caps, $actual_caps );
+	}
 }

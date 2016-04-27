@@ -12,6 +12,13 @@ class WSUWP_Content_Visibility {
 	private static $instance;
 
 	/**
+	 * @var array Default groups supported by Content Visibility.
+	 */
+	var $default_groups = array(
+		array( 'id' => 'site-member', 'name' => 'Site Members' ),
+	);
+
+	/**
 	 * Maintain and return the one instance of the plugin. Initiate hooks when
 	 * called the first time.
 	 *
@@ -83,16 +90,21 @@ class WSUWP_Content_Visibility {
 				return $caps;
 			}
 
+			$group_member = false;
+			if ( in_array( 'site-member', $groups, true ) && is_user_member_of_blog( $user_id ) ) {
+				$group_member = true;
+			}
+
 			/**
 			 * Filter whether a user is a member of the allowed groups to view this private content.
 			 *
 			 * @since 0.1.0
 			 *
-			 * @param bool  $value   Default false. True if the user is a member of the passed groups. False if not.
-			 * @param int   $user_id ID of the user attempting to view content.
-			 * @param array $groups  List of allowed groups attached to a post.
+			 * @param bool  $group_member Default false. True if the user is a member of the passed groups. False if not.
+			 * @param int   $user_id      ID of the user attempting to view content.
+			 * @param array $groups       List of allowed groups attached to a post.
 			 */
-			if ( false === apply_filters( 'user_in_content_visibility_groups', false, $user_id, $groups ) ) {
+			if ( false === apply_filters( 'user_in_content_visibility_groups', $group_member, $user_id, $groups ) ) {
 				return $caps;
 			}
 
@@ -147,7 +159,7 @@ class WSUWP_Content_Visibility {
 		 *
 		 * @param array $group_details Array of details, containing only basic information by default.
 		 */
-		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
+		$default_groups = apply_filters( 'content_visibility_default_groups', $this->default_groups );
 
 		$viewer_groups = (array) get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
 
@@ -211,7 +223,7 @@ class WSUWP_Content_Visibility {
 		 *
 		 * @param array $group_details Array of details, containing only basic information by default.
 		 */
-		$default_groups = apply_filters( 'content_visibility_default_groups', array() );
+		$default_groups = apply_filters( 'content_visibility_default_groups', $this->default_groups );
 		$default_group_ids = wp_list_pluck( $default_groups, 'id' );
 
 		$content_viewer_ids = isset( $_POST['content_view'] ) ? (array) $_POST['content_view'] : array();
