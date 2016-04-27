@@ -1,10 +1,6 @@
 <?php
 
 class WSUWP_Content_Visibility {
-	/**
-	 * @var string Version number to append to enqueued assets.
-	 */
-	var $script_version = '0.1.0';
 
 	/**
 	 * @var WSUWP_Content_Visibility
