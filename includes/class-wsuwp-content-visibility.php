@@ -15,7 +15,7 @@ class WSUWP_Content_Visibility {
 	 * @var array
 	 */
 	var $default_groups = array(
-		array( 'id' => 'site-member', 'name' => 'Site Members' ),
+		array( 'id' => 'site-member', 'name' => 'Members of this site' ),
 	);
 
 	/**
