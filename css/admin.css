@@ -1,0 +1,45 @@
+#misc-publishing-actions {
+	display: flex;
+	flex-direction: column;
+}
+
+.misc-pub-section {
+	order: 3;
+}
+
+.misc-pub-post-status {
+	order: 1;
+}
+
+.misc-pub-visibility {
+	display: none;
+}
+
+.misc-pub-custom-visibility {
+	order: 2;
+}
+
+#post-custom-visibility-display {
+	font-weight: 600;
+}
+
+#post-custom-visibility-select {
+	line-height: 1.5em;
+	margin-top: 3px;
+}
+
+#post-body #custom-visibility:before {
+	content: "\f177";
+	font: 400 20px/1 dashicons;
+	color: #82878c;
+	speak: none;
+	display: inline-block;
+	padding: 0 2px 0 0;
+	top: 0;
+	left: -1px;
+	position: relative;
+	vertical-align: top;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-decoration: none !important;
+}

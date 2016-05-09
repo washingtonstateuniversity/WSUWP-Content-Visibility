@@ -40,10 +40,23 @@ class WSUWP_Content_Visibility {
 	 * @since 0.1.0
 	 */
 	public function setup_hooks() {
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+		add_action( 'post_submitbox_misc_actions', array( $this, 'add_visibility_selection' ) );
 		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
+	}
+
+	/**
+	 * Enqueue the scripts and styles used in the admin interface.
+	 *
+	 * @since 1.0.0
+	 */
+	public function admin_enqueue_scripts() {
+		wp_enqueue_style( 'content-visibility-admin', plugins_url( 'css/admin.css', dirname( __FILE__ ) ), array(), false );
+		wp_enqueue_script( 'content-visibility-selection', plugins_url( 'js/post-admin.js', dirname( __FILE__ ) ), array( 'jquery' ), false, true );
+		wp_localize_script( 'content-visibility-selection', 'customPostL10n', array( 'custom' => __( 'Custom' ) ) );
 	}
 
 	/**
@@ -54,6 +67,91 @@ class WSUWP_Content_Visibility {
 	public function add_post_type_support() {
 		add_post_type_support( 'post', 'wsuwp-content-visibility' );
 		add_post_type_support( 'page', 'wsuwp-content-visibility' );
+	}
+
+	/**
+	 *
+	 * Forked originally from core code in wp-admin/includes/meta-boxes.php used to
+	 * assign a post's visibility.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Post $post
+	 */
+	public function add_visibility_selection( $post ) {
+		$post_type = $post->post_type;
+		$post_type_object = get_post_type_object( $post_type );
+
+		// If a current user can publish, the current user can modify visibility settings.
+		$can_publish = current_user_can( $post_type_object->cap->publish_posts );
+
+		$custom_visibility_groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
+
+		?>
+		<div class="misc-pub-section misc-pub-custom-visibility" id="custom-visibility">
+			<?php
+
+			esc_html_e( 'Visibility:' );
+
+			if ( ! empty( $custom_visibility_groups ) ) {
+				$post->post_password = '';
+				$visibility = 'custom';
+				$visibility_trans = __( 'Custom' );
+			} elseif ( 'private' === $post->post_status ) {
+				$post->post_password = '';
+				$visibility = 'private';
+				$visibility_trans = __( 'Private' );
+			} elseif ( ! empty( $post->post_password ) ) {
+				$visibility = 'password';
+				$visibility_trans = __( 'Password protected' );
+			} elseif ( 'post' === $post->post_type && is_sticky( $post->ID ) ) {
+				$visibility = 'public';
+				$visibility_trans = __( 'Public, Sticky' );
+			} else {
+				$visibility = 'public';
+				$visibility_trans = __( 'Public' );
+			}
+
+			?>
+			<span id="post-custom-visibility-display"><?php echo esc_html( $visibility_trans ); ?></span>
+			<?php if ( $can_publish ) { ?>
+				<a href="#custom-visibility" class="edit-custom-visibility hide-if-no-js"><span aria-hidden="true"><?php esc_html_e( 'Edit' ); ?></span> <span class="screen-reader-text"><?php esc_html_e( 'Edit visibility' ); ?></span></a>
+
+				<div id="post-custom-visibility-select" class="hide-if-js">
+					<input type="hidden" name="hidden_custom_post_password" id="hidden-custom-post-password" value="<?php echo esc_attr( $post->post_password ); ?>" />
+
+					<?php if ( 'post' === $post_type ) : ?>
+						<input type="checkbox" style="display:none" name="custom-hidden_post_sticky" id="hidden-custom-post-sticky" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> />
+					<?php endif; ?>
+
+					<input type="hidden" name="hidden_custom_post_visibility" id="hidden-custom-post-visibility" value="<?php echo esc_attr( $visibility ); ?>" />
+
+					<input type="radio" name="custom_visibility" id="custom-visibility-radio-public" value="public" <?php checked( $visibility, 'public' ); ?> /> <label for="custom-visibility-radio-public" class="selectit"><?php esc_html_e( 'Public' ); ?></label><br />
+
+					<?php if ( 'post' === $post_type && current_user_can( 'edit_others_posts' ) ) : ?>
+						<span id="sticky-span"><input id="custom-sticky" name="custom-sticky" type="checkbox" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> /> <label for="custom-sticky" class="selectit"><?php esc_html_e( 'Stick this post to the front page' ); ?></label><br /></span>
+					<?php endif; ?>
+
+					<input type="radio" name="custom_visibility" id="custom-visibility-radio-password" value="password" <?php checked( $visibility, 'password' ); ?> /> <label for="custom-visibility-radio-password" class="selectit"><?php esc_html_e( 'Password protected' ); ?></label><br />
+
+					<span id="password-span"><label for="custom-post_password"><?php esc_html_e( 'Password:' ); ?></label> <input type="text" name="custom-post_password" id="custom-post_password" value="<?php echo esc_attr( $post->post_password ); ?>"  maxlength="20" /><br /></span>
+
+					<input type="radio" name="custom_visibility" id="custom-visibility-radio-private" value="private" <?php checked( $visibility, 'private' ); ?> /> <label for="custom-visibility-radio-private" class="selectit"><?php esc_html_e( 'Private' ); ?></label><br />
+
+					<input type="radio" name="custom_visibility" id="custom-visibility-radio-custom" value="custom" <?php checked( $visibility, 'custom' ); ?> /> <label for="custom-visibility-radio-custom" class="selectit"><?php esc_html_e( 'Custom' ); ?></label><br />
+
+					<div class="custom-visibility-groups hide-if-js">
+						custom groups will appear here...
+					</div>
+					<p>
+						<a href="#custom-visibility" class="save-post-custom-visibility hide-if-no-js button"><?php esc_html_e( 'OK' ); ?></a>
+						<a href="#custom-visibility" class="cancel-post-custom-visibility hide-if-no-js button-cancel"><?php esc_html_e( 'Cancel' ); ?></a>
+					</p>
+				</div>
+			<?php } ?>
+		</div>
+		<?php
+
 	}
 
 	/**
