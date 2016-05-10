@@ -21,9 +21,28 @@ module.exports = function(grunt) {
 				maximumLineLength: 250,                        // temporary
 				fix: false
 			}
+		},
+
+		jshint: {
+			src: "js/*.js",
+			options: {
+				bitwise: true,
+				curly: true,
+				eqeqeq: true,
+				forin: true,
+				freeze: true,
+				noarg: true,
+				nonbsp: true,
+				//quotmark: "double", // We have some fancy selectors.
+				undef: true,
+				unused: true,
+				browser: true, // Define globals exposed by modern browsers.
+				jquery: true   // Define globals exposed by jQuery.
+			}
 		}
 	});
 
 	grunt.loadNpmTasks('grunt-phpcs');
 	grunt.loadNpmTasks('grunt-jscs');
+	grunt.loadNpmTasks('grunt-contrib-jshint');
 };

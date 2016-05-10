@@ -1,5 +1,5 @@
 /* global postL10n, customPostL10n */
-( function( $, window ) {
+( function( $ ) {
 	var updateVisibility, localizeText, updateText;
 	var stamp = $( "#timestamp" ).html();
 	var visibility = $( "#post-custom-visibility-display" ).html();
@@ -51,24 +51,24 @@
 		originalDate = new Date( $( "#hidden_aa" ).val(), $( "#hidden_mm" ).val() - 1, $( "#hidden_jj" ).val(), $( "#hidden_hh" ).val(), $( "#hidden_mn" ).val() );
 		currentDate = new Date( $( "#cur_aa" ).val(), $( "#cur_mm" ).val() - 1, $( "#cur_jj" ).val(), $( "#cur_hh" ).val(), $( "#cur_mn" ).val() );
 
-		if ( attemptedDate.getFullYear() != aa || ( 1 + attemptedDate.getMonth() ) != mm || attemptedDate.getDate() != jj || attemptedDate.getMinutes() != mn ) {
+		if ( attemptedDate.getFullYear() !== aa || ( 1 + attemptedDate.getMonth() ) !== mm || attemptedDate.getDate() !== jj || attemptedDate.getMinutes() !== mn ) {
 			$timestampdiv.find( ".timestamp-wrap" ).addClass( "form-invalid" );
 			return false;
 		} else {
 			$timestampdiv.find( ".timestamp-wrap" ).removeClass( "form-invalid" );
 		}
 
-		if ( attemptedDate > currentDate && $( "#original_post_status" ).val() != "future" ) {
+		if ( attemptedDate > currentDate && "future" !== $( "#original_post_status" ).val() ) {
 			publishOn = postL10n.publishOnFuture;
 			$( "#publish" ).val( postL10n.schedule );
-		} else if ( attemptedDate <= currentDate && $( "#original_post_status" ).val() != "publish" ) {
+		} else if ( attemptedDate <= currentDate && "publish" !== $( "#original_post_status" ).val() ) {
 			publishOn = postL10n.publishOn;
 			$( "#publish" ).val( postL10n.publish );
 		} else {
 			publishOn = postL10n.publishOnPast;
 			$( "#publish" ).val( postL10n.update );
 		}
-		if ( originalDate.toUTCString() == attemptedDate.toUTCString() ) { //Hack
+		if ( originalDate.toUTCString() === attemptedDate.toUTCString() ) { //Hack
 			$( "#timestamp" ).html( stamp );
 		} else {
 			$( "#timestamp" ).html(
@@ -83,7 +83,7 @@
 			);
 		}
 
-		if ( $postVisibilitySelect.find( "input:radio:checked" ).val() == "private" ) {
+		if ( "private" === $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
 			$( "#publish" ).val( postL10n.update );
 			if ( 0 === optPublish.length ) {
 				postStatus.append( '<option value="publish">' + postL10n.privatelyPublished + "</option>" );
@@ -93,7 +93,7 @@
 			$( 'option[value="publish"]', postStatus ).prop( "selected", true );
 			$( "#misc-publishing-actions .edit-post-status" ).hide();
 		} else {
-			if ( $( "#original_post_status" ).val() == "future" || $( "#original_post_status" ).val() == "draft" ) {
+			if ( "future" === $( "#original_post_status" ).val() || "draft" === $( "#original_post_status" ).val() ) {
 				if ( optPublish.length ) {
 					optPublish.remove();
 					postStatus.val( $( "#hidden_post_status" ).val() );
@@ -106,11 +106,11 @@
 			}
 		}
 		$( "#post-status-display" ).html( $( "option:selected", postStatus ).text() );
-		if ( $( "option:selected", postStatus ).val() == "private" || $( "option:selected", postStatus ).val() == "publish" ) {
+		if ( "private" === $( "option:selected", postStatus ).val() || "publish" === $( "option:selected", postStatus ).val() ) {
 			$( "#save-post" ).hide();
 		} else {
 			$( "#save-post" ).show();
-			if ( $( "option:selected", postStatus ).val() == "pending" ) {
+			if ( "pending" === $( "option:selected", postStatus ).val() ) {
 				$( "#save-post" ).show().val( postL10n.savePending );
 			} else {
 				$( "#save-post" ).show().val( postL10n.saveDraft );
@@ -149,7 +149,7 @@
 			$( "#custom-visibility .edit-custom-visibility" ).show().focus();
 
 			updateText();
-			event.preventDefault();
+			e.preventDefault();
 		} );
 
 		/**
@@ -183,4 +183,4 @@
 			updateVisibility();
 		} );
 	} );
-}( jQuery, window ) );
+}( jQuery ) );
