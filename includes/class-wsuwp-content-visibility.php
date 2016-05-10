@@ -54,8 +54,14 @@ class WSUWP_Content_Visibility {
 	 * @since 1.0.0
 	 */
 	public function admin_enqueue_scripts() {
-		wp_enqueue_style( 'content-visibility-admin', plugins_url( 'css/admin.css', dirname( __FILE__ ) ), array(), false );
-		wp_enqueue_script( 'content-visibility-selection', plugins_url( 'js/post-admin.js', dirname( __FILE__ ) ), array( 'jquery' ), false, true );
+		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
+			$min = '';
+		} else {
+			$min = '.min';
+		}
+
+		wp_enqueue_style( 'content-visibility-admin', plugins_url( 'css/admin' . $min . '.css', dirname( __FILE__ ) ), array(), false );
+		wp_enqueue_script( 'content-visibility-selection', plugins_url( 'js/post-admin' . $min . '.js', dirname( __FILE__ ) ), array( 'jquery' ), false, true );
 		wp_localize_script( 'content-visibility-selection', 'customPostL10n', array( 'custom' => __( 'Custom' ) ) );
 	}
 

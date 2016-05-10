@@ -50,7 +50,7 @@ script:
       fi
     - |
       if [[ "$WP_TRAVISCI" == "grunt" ]] ; then
-        grunt phpcs
-        grunt jscs
-        grunt jshint
+        grunt css
+        grunt js
+        grunt php
       fi
