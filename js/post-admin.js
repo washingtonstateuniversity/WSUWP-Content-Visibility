@@ -1,10 +1,10 @@
 /* global postL10n, customPostL10n */
 ( function( $, window ) {
 	var updateVisibility, localizeText, updateText;
-	var stamp = $('#timestamp').html();
+	var stamp = $( "#timestamp" ).html();
 	var visibility = $( "#post-custom-visibility-display" ).html();
 	var $postVisibilitySelect = $( "#post-custom-visibility-select" );
-	var $timestampdiv = $('#timestampdiv');
+	var $timestampdiv = $( "#timestampdiv" );
 
 	/**
 	 * Localize text depending on its custom status. Default post status selections
@@ -39,79 +39,81 @@
 
 	updateText = function() {
 
-		if ( ! $timestampdiv.length )
+		if ( !$timestampdiv.length ) {
 			return true;
+		}
 
-		var attemptedDate, originalDate, currentDate, publishOn, postStatus = $('#post_status'),
-			optPublish = $('option[value="publish"]', postStatus), aa = $('#aa').val(),
-			mm = $('#mm').val(), jj = $('#jj').val(), hh = $('#hh').val(), mn = $('#mn').val();
+		var attemptedDate, originalDate, currentDate, publishOn, postStatus = $( "#post_status" ),
+			optPublish = $( 'option[value="publish"]', postStatus ), aa = $( "#aa" ).val(),
+			mm = $( "#mm" ).val(), jj = $( "#jj" ).val(), hh = $( "#hh" ).val(), mn = $( "#mn" ).val();
 
 		attemptedDate = new Date( aa, mm - 1, jj, hh, mn );
-		originalDate = new Date( $('#hidden_aa').val(), $('#hidden_mm').val() -1, $('#hidden_jj').val(), $('#hidden_hh').val(), $('#hidden_mn').val() );
-		currentDate = new Date( $('#cur_aa').val(), $('#cur_mm').val() -1, $('#cur_jj').val(), $('#cur_hh').val(), $('#cur_mn').val() );
+		originalDate = new Date( $( "#hidden_aa" ).val(), $( "#hidden_mm" ).val() - 1, $( "#hidden_jj" ).val(), $( "#hidden_hh" ).val(), $( "#hidden_mn" ).val() );
+		currentDate = new Date( $( "#cur_aa" ).val(), $( "#cur_mm" ).val() - 1, $( "#cur_jj" ).val(), $( "#cur_hh" ).val(), $( "#cur_mn" ).val() );
 
-		if ( attemptedDate.getFullYear() != aa || (1 + attemptedDate.getMonth()) != mm || attemptedDate.getDate() != jj || attemptedDate.getMinutes() != mn ) {
-			$timestampdiv.find('.timestamp-wrap').addClass('form-invalid');
+		if ( attemptedDate.getFullYear() != aa || ( 1 + attemptedDate.getMonth() ) != mm || attemptedDate.getDate() != jj || attemptedDate.getMinutes() != mn ) {
+			$timestampdiv.find( ".timestamp-wrap" ).addClass( "form-invalid" );
 			return false;
 		} else {
-			$timestampdiv.find('.timestamp-wrap').removeClass('form-invalid');
+			$timestampdiv.find( ".timestamp-wrap" ).removeClass( "form-invalid" );
 		}
 
-		if ( attemptedDate > currentDate && $('#original_post_status').val() != 'future' ) {
+		if ( attemptedDate > currentDate && $( "#original_post_status" ).val() != "future" ) {
 			publishOn = postL10n.publishOnFuture;
-			$('#publish').val( postL10n.schedule );
-		} else if ( attemptedDate <= currentDate && $('#original_post_status').val() != 'publish' ) {
+			$( "#publish" ).val( postL10n.schedule );
+		} else if ( attemptedDate <= currentDate && $( "#original_post_status" ).val() != "publish" ) {
 			publishOn = postL10n.publishOn;
-			$('#publish').val( postL10n.publish );
+			$( "#publish" ).val( postL10n.publish );
 		} else {
 			publishOn = postL10n.publishOnPast;
-			$('#publish').val( postL10n.update );
+			$( "#publish" ).val( postL10n.update );
 		}
-		if ( originalDate.toUTCString() == attemptedDate.toUTCString() ) { //hack
-			$('#timestamp').html(stamp);
+		if ( originalDate.toUTCString() == attemptedDate.toUTCString() ) { //Hack
+			$( "#timestamp" ).html( stamp );
 		} else {
-			$('#timestamp').html(
-				'\n' + publishOn + ' <b>' +
+			$( "#timestamp" ).html(
+				"\n" + publishOn + " <b>" +
 				postL10n.dateFormat
-					.replace( '%1$s', $( 'option[value="' + mm + '"]', '#mm' ).attr( 'data-text' ) )
-					.replace( '%2$s', parseInt( jj, 10 ) )
-					.replace( '%3$s', aa )
-					.replace( '%4$s', ( '00' + hh ).slice( -2 ) )
-					.replace( '%5$s', ( '00' + mn ).slice( -2 ) ) +
-				'</b> '
+					.replace( "%1$s", $( 'option[value="' + mm + '"]', "#mm" ).attr( "data-text" ) )
+					.replace( "%2$s", parseInt( jj, 10 ) )
+					.replace( "%3$s", aa )
+					.replace( "%4$s", ( "00" + hh ).slice( -2 ) )
+					.replace( "%5$s", ( "00" + mn ).slice( -2 ) ) +
+				"</b> "
 			);
 		}
 
-		if ( $postVisibilitySelect.find('input:radio:checked').val() == 'private' ) {
-			$('#publish').val( postL10n.update );
+		if ( $postVisibilitySelect.find( "input:radio:checked" ).val() == "private" ) {
+			$( "#publish" ).val( postL10n.update );
 			if ( 0 === optPublish.length ) {
-				postStatus.append('<option value="publish">' + postL10n.privatelyPublished + '</option>');
+				postStatus.append( '<option value="publish">' + postL10n.privatelyPublished + "</option>" );
 			} else {
 				optPublish.html( postL10n.privatelyPublished );
 			}
-			$('option[value="publish"]', postStatus).prop('selected', true);
-			$('#misc-publishing-actions .edit-post-status').hide();
+			$( 'option[value="publish"]', postStatus ).prop( "selected", true );
+			$( "#misc-publishing-actions .edit-post-status" ).hide();
 		} else {
-			if ( $('#original_post_status').val() == 'future' || $('#original_post_status').val() == 'draft' ) {
+			if ( $( "#original_post_status" ).val() == "future" || $( "#original_post_status" ).val() == "draft" ) {
 				if ( optPublish.length ) {
 					optPublish.remove();
-					postStatus.val($('#hidden_post_status').val());
+					postStatus.val( $( "#hidden_post_status" ).val() );
 				}
 			} else {
 				optPublish.html( postL10n.published );
 			}
-			if ( postStatus.is(':hidden') )
-				$('#misc-publishing-actions .edit-post-status').show();
+			if ( postStatus.is( ":hidden" ) ) {
+				$( "#misc-publishing-actions .edit-post-status" ).show();
+			}
 		}
-		$('#post-status-display').html($('option:selected', postStatus).text());
-		if ( $('option:selected', postStatus).val() == 'private' || $('option:selected', postStatus).val() == 'publish' ) {
-			$('#save-post').hide();
+		$( "#post-status-display" ).html( $( "option:selected", postStatus ).text() );
+		if ( $( "option:selected", postStatus ).val() == "private" || $( "option:selected", postStatus ).val() == "publish" ) {
+			$( "#save-post" ).hide();
 		} else {
-			$('#save-post').show();
-			if ( $('option:selected', postStatus).val() == 'pending' ) {
-				$('#save-post').show().val( postL10n.savePending );
+			$( "#save-post" ).show();
+			if ( $( "option:selected", postStatus ).val() == "pending" ) {
+				$( "#save-post" ).show().val( postL10n.savePending );
 			} else {
-				$('#save-post').show().val( postL10n.saveDraft );
+				$( "#save-post" ).show().val( postL10n.saveDraft );
 			}
 		}
 		return true;
@@ -163,7 +165,7 @@
 			updateText();
 
 			// Non-public posts can not be sticky.
-			if ( 'public' !== $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
+			if ( "public" !== $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
 				$( "#sticky" ).prop( "checked", false );
 			}
 
