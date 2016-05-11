@@ -61,7 +61,7 @@ class WSUWP_Content_Visibility {
 
 		wp_enqueue_style( 'content-visibility-admin', plugins_url( 'css/admin' . $min . '.css', dirname( __FILE__ ) ), array(), false );
 		wp_enqueue_script( 'content-visibility-selection', plugins_url( 'js/post-admin' . $min . '.js', dirname( __FILE__ ) ), array( 'jquery' ), false, true );
-		wp_localize_script( 'content-visibility-selection', 'customPostL10n', array( 'custom' => __( 'Custom' ) ) );
+		wp_localize_script( 'content-visibility-selection', 'customPostL10n', array( 'custom' => __( 'Manage authorized viewers' ) ) );
 	}
 
 	/**
@@ -101,7 +101,7 @@ class WSUWP_Content_Visibility {
 			if ( ! empty( $custom_visibility_groups ) ) {
 				$post->post_password = '';
 				$visibility = 'custom';
-				$visibility_trans = __( 'Custom' );
+				$visibility_trans = __( 'Manage authorized viewers' );
 			} elseif ( 'private' === $post->post_status ) {
 				$post->post_password = '';
 				$visibility = 'private';
@@ -131,22 +131,22 @@ class WSUWP_Content_Visibility {
 
 					<input type="hidden" name="hidden_custom_post_visibility" id="hidden-custom-post-visibility" value="<?php echo esc_attr( $visibility ); ?>" />
 
-					<input type="radio" name="custom_visibility" id="custom-visibility-radio-public" value="public" <?php checked( $visibility, 'public' ); ?> /> <label for="custom-visibility-radio-public" class="selectit"><?php esc_html_e( 'Public' ); ?></label><br />
+					<input type="radio" name="visibility" id="custom-visibility-radio-public" value="public" <?php checked( $visibility, 'public' ); ?> /> <label for="custom-visibility-radio-public" class="selectit"><?php esc_html_e( 'Public' ); ?></label><br />
 
 					<?php if ( 'post' === $post_type && current_user_can( 'edit_others_posts' ) ) : ?>
 						<span id="sticky-span"><input id="custom-sticky" name="custom-sticky" type="checkbox" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> /> <label for="custom-sticky" class="selectit"><?php esc_html_e( 'Stick this post to the front page' ); ?></label><br /></span>
 					<?php endif; ?>
 
-					<input type="radio" name="custom_visibility" id="custom-visibility-radio-password" value="password" <?php checked( $visibility, 'password' ); ?> /> <label for="custom-visibility-radio-password" class="selectit"><?php esc_html_e( 'Password protected' ); ?></label><br />
+					<input type="radio" name="visibility" id="custom-visibility-radio-password" value="password" <?php checked( $visibility, 'password' ); ?> /> <label for="custom-visibility-radio-password" class="selectit"><?php esc_html_e( 'Password protected' ); ?></label><br />
 
-					<span id="password-span"><label for="custom-post_password"><?php esc_html_e( 'Password:' ); ?></label> <input type="text" name="custom-post_password" id="custom-post_password" value="<?php echo esc_attr( $post->post_password ); ?>"  maxlength="20" /><br /></span>
+					<span id="password-span"><label for="post_password"><?php esc_html_e( 'Password:' ); ?></label> <input type="text" name="post_password" id="custom-post_password" value="<?php echo esc_attr( $post->post_password ); ?>"  maxlength="20" /><br /></span>
 
-					<input type="radio" name="custom_visibility" id="custom-visibility-radio-private" value="private" <?php checked( $visibility, 'private' ); ?> /> <label for="custom-visibility-radio-private" class="selectit"><?php esc_html_e( 'Private' ); ?></label><br />
+					<input type="radio" name="visibility" id="custom-visibility-radio-private" value="private" <?php checked( $visibility, 'private' ); ?> /> <label for="custom-visibility-radio-private" class="selectit"><?php esc_html_e( 'Private' ); ?></label><br />
 
-					<input type="radio" name="custom_visibility" id="custom-visibility-radio-custom" value="custom" <?php checked( $visibility, 'custom' ); ?> /> <label for="custom-visibility-radio-custom" class="selectit"><?php esc_html_e( 'Custom' ); ?></label><br />
+					<input type="radio" name="custom_visibility" id="custom-visibility-radio-custom" value="custom" <?php checked( $visibility, 'custom' ); ?> /> <label for="custom-visibility-radio-custom" class="selectit"><?php esc_html_e( 'Manage authorized viewers' ); ?></label><br />
 
 					<div class="custom-visibility-groups hide-if-js">
-						custom groups will appear here...
+						<?php $this->display_viewers_meta_box( $post ); ?>
 					</div>
 					<p>
 						<a href="#custom-visibility" class="save-post-custom-visibility hide-if-no-js button"><?php esc_html_e( 'OK' ); ?></a>
@@ -238,7 +238,6 @@ class WSUWP_Content_Visibility {
 	 */
 	public function display_viewers_meta_box( $post ) {
 		?>
-		<p class="description">Manage authorized viewers of this content.</p>
 		<input type="hidden" name="visibility_viewers_box" value="1" />
 		<?php
 		wp_nonce_field( 'save-content-visibility', '_content_visibility_nonce' );
