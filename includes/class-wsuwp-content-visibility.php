@@ -44,7 +44,6 @@ class WSUWP_Content_Visibility {
 		add_action( 'post_submitbox_misc_actions', array( $this, 'add_visibility_selection' ) );
 		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
-		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 2 );
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
 	}
 
@@ -228,20 +227,6 @@ class WSUWP_Content_Visibility {
 		}
 
 		return $caps;
-	}
-
-	/**
-	 * Add the meta boxes created by the plugin to supporting post types.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string  $post_type The slug of the current post type being edited.
-	 * @param WP_Post $post      The current post.
-	 */
-	public function add_meta_boxes( $post_type, $post ) {
-		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) && 'private' === $post->post_status ) {
-			add_meta_box( 'wsuwp-content-viewers-box', 'Content Viewers', array( $this, 'display_viewers_meta_box' ), null, 'side', 'high' );
-		}
 	}
 
 	/**
