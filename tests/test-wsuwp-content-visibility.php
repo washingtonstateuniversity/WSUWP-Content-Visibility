@@ -14,7 +14,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 
 		$content_visibility = WSUWP_Content_Visibility();
 
-		$this->assertTrue( $content_visibility->user_can_read_post(  $post, $user ) );
+		$this->assertTrue( $content_visibility->user_can_read_post( $post, $user ) );
 	}
 
 	/**
@@ -58,7 +58,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 		$user = get_user_by( 'id', $user_id );
 
 		$current_user_id = get_current_user_id();
-		wp_set_current_user(  $user_id );
+		wp_set_current_user( $user_id );
 
 		update_post_meta( $post->ID, '_content_visibility_viewer_groups', array( 'group1' ) );
 
@@ -68,7 +68,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 		$can_read = $content_visibility->user_can_read_post( $post, $user );
 		remove_filter( 'user_in_content_visibility_groups', '__return_true' );
 
-		wp_set_current_user(  $current_user_id );
+		wp_set_current_user( $current_user_id );
 
 		$this->assertTrue( $can_read );
 	}
