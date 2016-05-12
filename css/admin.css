@@ -43,3 +43,8 @@
 	-moz-osx-font-smoothing: grayscale;
 	text-decoration: none;
 }
+
+.custom-visibility-groups {
+	padding-left: 1.5rem;
+	padding-top: .5rem;
+}

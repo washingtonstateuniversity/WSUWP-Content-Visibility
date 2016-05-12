@@ -1,6 +1,7 @@
 /* global postL10n, customPostL10n */
-( function( $ ) {
+( function( $, window ) {
 	var updateVisibility, localizeText, updateText;
+	window.checkedCustomGroups = [];
 	var stamp = $( "#timestamp" ).html();
 	var visibility = $( "#post-custom-visibility-display" ).html();
 	var $postVisibilitySelect = $( "#post-custom-visibility-select" );
@@ -135,6 +136,32 @@
 			$( this ).hide();
 		} );
 
+		$( "#custom-visibility-radio-custom" ).click( function() {
+			$( ".remove-custom-visibility" ).each( function( x, el ) { $( el ).prop( "checked", false ); } );
+			$( "#hidden-custom-post-visibility" ).val( "public" );
+			if ( 0 < Object.keys( window.checkedCustomGroups ).length ) {
+				$( ".custom-visibility-groups input[type='checkbox']" ).each( function( x, el ) {
+					if ( window.checkedCustomGroups.hasOwnProperty( $( el ).attr( "name" ) ) ) {
+						$( el ).prop( "checked", true );
+					} else {
+						$( el ).prop( "checked", false );
+					}
+				} );
+			}
+			$( ".custom-visibility-groups" ).slideDown( "fast" );
+		} );
+
+		$( ".remove-custom-visibility" ).click( function() {
+			$( ".custom-visibility-groups" ).slideUp( "fast" );
+			$( "#custom-visibility-radio-custom" ).prop( "checked", false );
+			$( ".custom-visibility-groups input[type='checkbox']" ).each( function( x, el ) {
+				if ( true === $( el ).prop( "checked" ) ) {
+					window.checkedCustomGroups[ $( el ).attr( "name" ) ] = true;
+					$( el ).prop( "checked", false );
+				}
+			} );
+		} );
+
 		/**
 		 * When cancel is clicked under the available options, reset everything back to its original
 		 * value and collapse the display.
@@ -142,7 +169,25 @@
 		$postVisibilitySelect.find( ".cancel-post-custom-visibility" ).click( function( e ) {
 			$postVisibilitySelect.slideUp( "fast" );
 
-			$( "#custom-visibility-radio-" + $( "#hidden-custom-post-visibility" ).val() ).prop( "checked", true );
+			if ( 0 < Object.keys( window.checkedCustomGroups ).length ) {
+				$( ".custom-visibility-groups input[type='checkbox']" ).each( function( x, el ) {
+					if ( window.checkedCustomGroups.hasOwnProperty( $( el ).attr( "name" ) ) ) {
+						$( el ).prop( "checked", true );
+					} else {
+						$( el ).prop( "checked", false );
+					}
+				} );
+				$( "#custom-visibility-radio-custom" ).prop( "checked", true );
+			} else {
+				$( "#custom-visibility-radio-" + $( "#hidden-custom-post-visibility" ).val() ).prop( "checked", true );
+			}
+
+			if ( true === $( "#custom-visibility-radio-custom" ).prop( "checked" ) ) {
+				$( ".remove-custom-visibility" ).each( function( x, el ) { $( el ).prop( "checked", false ); } );
+				$( "#hidden-custom-post-visibility" ).val( "public" );
+				$( ".custom-visibility-groups" ).slideDown( "fast" );
+			}
+
 			$( "#custom-post_password" ).val( $( "#hidden-custom-post-password" ).val() );
 			$( "#custom-sticky" ).prop( "checked", $( "#hidden-custom-post-sticky" ).prop( "checked" ) );
 			$( "post-custom-visibility-display" ).html( visibility );
@@ -164,6 +209,10 @@
 
 			updateText();
 
+			if ( true !== $( "#custom-visibility-radio-custom" ).prop( "checked" ) ) {
+				window.checkedCustomGroups = [];
+			}
+
 			// Non-public posts can not be sticky.
 			if ( "public" !== $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
 				$( "#sticky" ).prop( "checked", false );
@@ -183,4 +232,4 @@
 			updateVisibility();
 		} );
 	} );
-}( jQuery ) );
+}( jQuery, window ) );

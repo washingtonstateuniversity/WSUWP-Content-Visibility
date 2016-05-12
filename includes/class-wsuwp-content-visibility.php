@@ -45,6 +45,7 @@ class WSUWP_Content_Visibility {
 		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
 		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
+		add_filter( 'wp_insert_post_data', array( $this, 'wp_insert_post_data' ), 10 );
 	}
 
 	/**
@@ -97,11 +98,13 @@ class WSUWP_Content_Visibility {
 			<?php
 
 			esc_html_e( 'Visibility:' );
+			$custom_groups_class = 'hide-if-js';
 
 			if ( ! empty( $custom_visibility_groups ) ) {
 				$post->post_password = '';
 				$visibility = 'custom';
 				$visibility_trans = __( 'Manage authorized viewers' );
+				$custom_groups_class = '';
 			} elseif ( 'private' === $post->post_status ) {
 				$post->post_password = '';
 				$visibility = 'private';
@@ -131,21 +134,21 @@ class WSUWP_Content_Visibility {
 
 					<input type="hidden" name="hidden_custom_post_visibility" id="hidden-custom-post-visibility" value="<?php echo esc_attr( $visibility ); ?>" />
 
-					<input type="radio" name="visibility" id="custom-visibility-radio-public" value="public" <?php checked( $visibility, 'public' ); ?> /> <label for="custom-visibility-radio-public" class="selectit"><?php esc_html_e( 'Public' ); ?></label><br />
+					<input type="radio" name="visibility" id="custom-visibility-radio-public" class="remove-custom-visibility" value="public" <?php checked( $visibility, 'public' ); ?> /> <label for="custom-visibility-radio-public" class="selectit"><?php esc_html_e( 'Public' ); ?></label><br />
 
 					<?php if ( 'post' === $post_type && current_user_can( 'edit_others_posts' ) ) : ?>
 						<span id="sticky-span"><input id="custom-sticky" name="custom-sticky" type="checkbox" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> /> <label for="custom-sticky" class="selectit"><?php esc_html_e( 'Stick this post to the front page' ); ?></label><br /></span>
 					<?php endif; ?>
 
-					<input type="radio" name="visibility" id="custom-visibility-radio-password" value="password" <?php checked( $visibility, 'password' ); ?> /> <label for="custom-visibility-radio-password" class="selectit"><?php esc_html_e( 'Password protected' ); ?></label><br />
+					<input type="radio" name="visibility" id="custom-visibility-radio-password" class="remove-custom-visibility" value="password" <?php checked( $visibility, 'password' ); ?> /> <label for="custom-visibility-radio-password" class="selectit"><?php esc_html_e( 'Password protected' ); ?></label><br />
 
 					<span id="password-span"><label for="post_password"><?php esc_html_e( 'Password:' ); ?></label> <input type="text" name="post_password" id="custom-post_password" value="<?php echo esc_attr( $post->post_password ); ?>"  maxlength="20" /><br /></span>
 
-					<input type="radio" name="visibility" id="custom-visibility-radio-private" value="private" <?php checked( $visibility, 'private' ); ?> /> <label for="custom-visibility-radio-private" class="selectit"><?php esc_html_e( 'Private' ); ?></label><br />
+					<input type="radio" name="visibility" id="custom-visibility-radio-private" class="remove-custom-visibility" value="private" <?php checked( $visibility, 'private' ); ?> /> <label for="custom-visibility-radio-private" class="selectit"><?php esc_html_e( 'Private' ); ?></label><br />
 
 					<input type="radio" name="custom_visibility" id="custom-visibility-radio-custom" value="custom" <?php checked( $visibility, 'custom' ); ?> /> <label for="custom-visibility-radio-custom" class="selectit"><?php esc_html_e( 'Manage authorized viewers' ); ?></label><br />
 
-					<div class="custom-visibility-groups hide-if-js">
+					<div class="custom-visibility-groups <?php echo $custom_groups_class; ?>">
 						<?php $this->display_viewers_meta_box( $post ); ?>
 					</div>
 					<p>
@@ -286,11 +289,13 @@ class WSUWP_Content_Visibility {
 			return;
 		}
 
-		if ( 'private' !== $post->post_status ) {
+		if ( ! isset( $_POST['visibility_viewers_box'] ) || ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
 			return;
 		}
 
-		if ( ! isset( $_POST['visibility_viewers_box'] ) || ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
+		if ( 'custom' !== $_POST['custom_visibility'] ) {
+			delete_post_meta( $post_id, '_content_visibility_viewer_groups' );
+
 			return;
 		}
 
@@ -314,5 +319,29 @@ class WSUWP_Content_Visibility {
 		}
 
 		update_post_meta( $post_id, '_content_visibility_viewer_groups', $save_groups );
+	}
+
+	/**
+	 * When a post is being updated, check to see if custom visibility is being assigned and
+	 * set the post status and post password back to public like defaults if so.
+	 *
+	 * @param WP_Post $post Post object prepared for save.
+	 * @return WP_Post $post Modified post object.
+	 */
+	public function wp_insert_post_data( $post ) {
+		// If custom visibility is not set, leave the post alone.
+		if ( ! isset( $_POST['custom_visibility'] ) || 'custom' !== $_POST['custom_visibility'] ) {
+			return $post;
+		}
+
+		if ( 'private' === $post['post_status'] ) {
+			$post['post_status'] = 'public';
+		}
+
+		if ( '' === $post['post_password'] ) {
+			$post['post_password'] = '';
+		}
+
+		return $post;
 	}
 }
