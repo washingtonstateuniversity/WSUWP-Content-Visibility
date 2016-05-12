@@ -7,7 +7,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 	 */
 	public function test_post_author_with_no_content_visibility_groups_return_true() {
 		$user_id = $this->factory->user->create( array( 'user_login' => 'testuser', 'role' => 'Contributor' ) );
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'private', 'post_author' => $user_id ) );
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility', 'post_author' => $user_id ) );
 
 		$post = get_post( $post_id );
 		$user = get_user_by( 'id', $user_id );
@@ -23,7 +23,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 	 * returned untouched.
 	 */
 	public function test_editor_user_in_content_visibility_groups_return_false() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'private' ) );
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility' ) );
 		$user_id = $this->factory->user->create( array( 'user_login' => 'testeditor', 'role' => 'Editor' ) );
 
 		$post = get_post( $post_id );
@@ -51,7 +51,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 	 * return the read_posts cap for the post type.
 	 */
 	public function test_user_in_content_visibility_groups_return_true() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'private' ) );
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility' ) );
 		$user_id = $this->factory->user->create( array( 'user_login' => 'testuser', 'role' => 'Contributor' ) );
 
 		$post = get_post( $post_id );
@@ -78,7 +78,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 	 * list of caps passed to allow_read_private_posts should change to return the read_posts cap for the post type.
 	 */
 	public function test_site_member_user_in_content_visibility_groups_default_groups() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'private' ) );
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility' ) );
 		$user_id = $this->factory->user->create( array( 'user_login' => 'testsubscriber', 'role' => 'Subscriber' ) );
 
 		$post = get_post( $post_id );
@@ -96,5 +96,63 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 		wp_set_current_user( $current_user_id );
 
 		$this->assertTrue( $can_read );
+	}
+
+	public function test_allow_read_private_posts_not_sent_when_user_is_not_authenticated() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility' ) );
+
+		update_post_meta( $post_id, '_content_visibility_viewer_groups', array( 'site-member' ) );
+
+		$current_user_id = get_current_user_id();
+		wp_set_current_user( 0 );
+
+		$args = array( 0 => $post_id );
+		$cap = 'read_post';
+		$caps = array( 'read_private_posts' );
+
+		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $caps, $cap, 0, $args );
+
+		wp_set_current_user( $current_user_id );
+
+		$this->assertEqualSets( $user_can_read_post, array( 0 => 'read_private_posts' ) );
+	}
+
+	public function test_allow_read_private_posts_set_when_user_is_a_group_member() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility' ) );
+		$user_id = $this->factory->user->create( array( 'user_login' => 'testsub2', 'role' => 'Subscriber' ) );
+
+		update_post_meta( $post_id, '_content_visibility_viewer_groups', array( 'site-member' ) );
+
+		$current_user_id = get_current_user_id();
+		wp_set_current_user( $user_id );
+
+		$args = array( 0 => $post_id );
+		$cap = 'read_post';
+		$caps = array( 'read_private_posts' );
+
+		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $caps, $cap, $user_id, $args );
+
+		wp_set_current_user( $current_user_id );
+
+		$this->assertEqualSets( $user_can_read_post, array( 0 => 'read' ) );
+	}
+
+	public function test_allow_read_private_posts_not_set_when_user_is_not_group_member() {
+		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility' ) );
+		$user_id = $this->factory->user->create( array( 'user_login' => 'testsub2', 'role' => 'Subscriber' ) );
+
+		update_post_meta( $post_id, '_content_visibility_viewer_groups', array( 'not-a-thing' ) );
+
+		$current_user_id = get_current_user_id();
+		wp_set_current_user( $user_id );
+
+		$args = array( 0 => $post_id );
+		$cap = 'read_post';
+		$caps = array( 'read_private_posts' );
+
+		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $caps, $cap, $user_id, $args );
+		wp_set_current_user( $user_id );
+
+		$this->assertEqualSets( $user_can_read_post, array( 0 => 'read_private_posts' ) );
 	}
 }
