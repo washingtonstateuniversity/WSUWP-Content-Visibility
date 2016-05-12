@@ -367,7 +367,7 @@ class WSUWP_Content_Visibility {
 
 		$post_type = get_post_type_object( $post->post_type );
 
-		if ( ! in_array( $post_type->cap->read_private_posts, $caps ) ) {
+		if ( ! in_array( $post_type->cap->read_private_posts, $caps, true ) ) {
 			return $caps;
 		}
 
