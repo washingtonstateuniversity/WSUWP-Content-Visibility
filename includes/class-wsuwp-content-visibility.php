@@ -19,6 +19,13 @@ class WSUWP_Content_Visibility {
 	);
 
 	/**
+	 * Whether to trigger a redirect if a 404 page is reached.
+	 *
+	 * @var bool
+	 */
+	var $private_redirect = false;
+
+	/**
 	 * Maintain and return the one instance of the plugin. Initiate hooks when
 	 * called the first time.
 	 *
@@ -42,10 +49,13 @@ class WSUWP_Content_Visibility {
 	public function setup_hooks() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'post_submitbox_misc_actions', array( $this, 'add_visibility_selection' ) );
-		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
+		add_action( 'init', array( $this, 'register_post_status' ), 10 );
+		add_action( 'init', array( $this, 'add_post_type_support' ), 11 );
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
 		add_filter( 'wp_insert_post_data', array( $this, 'wp_insert_post_data' ), 10 );
+		add_action( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_action( 'template_redirect', array( $this, 'template_redirect' ), 9 );
+		add_filter( 'posts_results', array( $this, 'setup_trick_404_redirect' ) );
 	}
 
 	/**
@@ -63,6 +73,24 @@ class WSUWP_Content_Visibility {
 		wp_enqueue_style( 'content-visibility-admin', plugins_url( 'css/admin' . $min . '.css', dirname( __FILE__ ) ), array(), false );
 		wp_enqueue_script( 'content-visibility-selection', plugins_url( 'js/post-admin' . $min . '.js', dirname( __FILE__ ) ), array( 'jquery' ), false, true );
 		wp_localize_script( 'content-visibility-selection', 'customPostL10n', array( 'custom' => __( 'Manage authorized viewers' ) ) );
+	}
+
+	/**
+	 * Register the custom post status used to track posts with custom visibility.
+	 *
+	 * @since 1.0.0
+	 */
+	public function register_post_status() {
+		$args = array(
+			'label' => 'Manage authorized viewers',
+			'public' => false,
+			'private' => true,
+			'exclude_from_search' => true,
+			'show_in_admin_all_list' => true,
+			'show_in_admin_status_list' => true,
+			'label_count' => _n_noop( 'Custom Visibility <span class="count">(%s)</span>', 'Custom Visibility <span class="count">(%s)</span>' ),
+		);
+		register_post_status( 'custom_visibility', $args );
 	}
 
 	/**
@@ -91,8 +119,6 @@ class WSUWP_Content_Visibility {
 		// If a current user can publish, the current user can modify visibility settings.
 		$can_publish = current_user_can( $post_type_object->cap->publish_posts );
 
-		$custom_visibility_groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
-
 		?>
 		<div class="misc-pub-section misc-pub-custom-visibility" id="custom-visibility">
 			<?php
@@ -100,7 +126,7 @@ class WSUWP_Content_Visibility {
 			esc_html_e( 'Visibility:' );
 			$custom_groups_class = 'hide-if-js';
 
-			if ( ! empty( $custom_visibility_groups ) ) {
+			if ( 'custom_visibility' === $post->post_status ) {
 				$post->post_password = '';
 				$visibility = 'custom';
 				$visibility_trans = __( 'Manage authorized viewers' );
@@ -305,9 +331,7 @@ class WSUWP_Content_Visibility {
 			return $post;
 		}
 
-		if ( 'private' === $post['post_status'] ) {
-			$post['post_status'] = 'public';
-		}
+		$post['post_status'] = 'custom_visibility';
 
 		if ( '' === $post['post_password'] ) {
 			$post['post_password'] = '';
@@ -317,31 +341,79 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Capture a page request before serving a template and redirect if viewers are
-	 * restricted via custom content visibility.
+	 * Manage capabilities allowing those other than a post's author to read a private post.
+	 *
+	 * By default, a post's author has private post capabilities for this post, so we return
+	 * the current capabilities untouched.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array  $caps    List of capabilities.
+	 * @param string $cap     The primitive capability.
+	 * @param int    $user_id ID of the user.
+	 * @param array  $args    Additional data, contains post ID.
+	 * @return array Updated list of capabilities.
+	 */
+	public function allow_read_private_posts( $caps, $cap, $user_id, $args ) {
+		if ( 'read_post' === $cap && in_array( 'read_private_pages', $caps, true ) && ! empty( $args[0] ) ) {
+			$post = get_post( $args[0] );
+			$user = get_user_by( 'id', $user_id );
+
+			if ( false === $this->user_can_read_post( $post, $user ) ) {
+				return $caps;
+			}
+
+			$post_type = get_post_type_object( $post->post_type );
+
+			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
+
+			if ( 1 === count( $caps_keys ) ) {
+				$caps = array( $post_type->cap->read );
+			} else {
+				foreach ( $caps_keys as $k => $v ) {
+					unset( $caps[ $v ] );
+				}
+				$caps[] = $post_type->cap->read;
+				$caps = array_values( $caps );
+			}
+		}
+
+		return $caps;
+	}
+
+	/**
+	 * Capture a page request before serving a template and redirect if viewers have
+	 * been marked for restriction via custom content visibility.
 	 *
 	 * @since 1.0.0
 	 */
 	public function template_redirect() {
-		if ( is_singular() ) {
-			$post = get_post();
-
-			if ( 'publish' !== $post->post_status || false === post_type_supports( $post->post_type, 'wsuwp-content-visibility' ) ) {
-				return;
+		if ( is_404() && $this->private_redirect ) {
+			if ( ! is_user_logged_in() ) {
+				$redirect = wp_login_url( $_SERVER['REQUEST_URI'] );
+			} else {
+				$redirect = get_home_url();
 			}
 
-			$user = wp_get_current_user();
-
-			if ( false === $this->user_can_read_post( $post, $user ) ) {
-				if ( ! is_user_logged_in() ) {
-					$redirect = wp_login_url( $_SERVER['REQUEST_URI'] );
-				} else {
-					$redirect = get_home_url();
-				}
-
-				wp_safe_redirect( $redirect );
-				exit;
-			}
+			wp_safe_redirect( $redirect );
+			exit;
 		}
+	}
+
+	/**
+	 * If results are available at this point in the process, then mark the flag
+	 * that will indicate a redirect should occur if the list of posts becomes
+	 * empty later in the process due to permissions issues.
+	 *
+	 * @param array $results Results of a posts query before additional processing.
+	 *
+	 * @return array Untouched results.
+	 */
+	public function setup_trick_404_redirect( $results ) {
+		if ( isset( $results[0] ) && 0 < count( $results[0] ) ) {
+			$this->private_redirect = true;
+		}
+
+		return $results;
 	}
 }
