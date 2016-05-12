@@ -355,27 +355,38 @@ class WSUWP_Content_Visibility {
 	 * @return array Updated list of capabilities.
 	 */
 	public function allow_read_private_posts( $caps, $cap, $user_id, $args ) {
-		if ( 'read_post' === $cap && in_array( 'read_private_pages', $caps, true ) && ! empty( $args[0] ) ) {
-			$post = get_post( $args[0] );
-			$user = get_user_by( 'id', $user_id );
+		if ( 'read_post' !== $cap || empty( $args[0] ) ) {
+			return $caps;
+		}
 
-			if ( false === $this->user_can_read_post( $post, $user ) ) {
-				return $caps;
+		$post = get_post( $args[0] );
+
+		if ( ! post_type_supports( $post->post_type, 'wsuwp-content-visibility' ) ) {
+			return $caps;
+		}
+
+		$post_type = get_post_type_object( $post->post_type );
+
+		if ( ! in_array( $post_type->cap->read_private_posts, $caps ) ) {
+			return $caps;
+		}
+
+		$user = get_user_by( 'id', $user_id );
+
+		if ( false === $this->user_can_read_post( $post, $user ) ) {
+			return $caps;
+		}
+
+		$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
+
+		if ( 1 === count( $caps_keys ) ) {
+			$caps = array( $post_type->cap->read );
+		} else {
+			foreach ( $caps_keys as $k => $v ) {
+				unset( $caps[ $v ] );
 			}
-
-			$post_type = get_post_type_object( $post->post_type );
-
-			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
-
-			if ( 1 === count( $caps_keys ) ) {
-				$caps = array( $post_type->cap->read );
-			} else {
-				foreach ( $caps_keys as $k => $v ) {
-					unset( $caps[ $v ] );
-				}
-				$caps[] = $post_type->cap->read;
-				$caps = array_values( $caps );
-			}
+			$caps[] = $post_type->cap->read;
+			$caps = array_values( $caps );
 		}
 
 		return $caps;
