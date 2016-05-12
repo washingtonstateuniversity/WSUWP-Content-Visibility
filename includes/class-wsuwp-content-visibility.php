@@ -43,9 +43,9 @@ class WSUWP_Content_Visibility {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'post_submitbox_misc_actions', array( $this, 'add_visibility_selection' ) );
 		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
-		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
 		add_filter( 'wp_insert_post_data', array( $this, 'wp_insert_post_data' ), 10 );
+		add_action( 'template_redirect', array( $this, 'template_redirect' ), 9 );
 	}
 
 	/**
@@ -163,73 +163,42 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Manage capabilities allowing those other than a post's author to read a private post.
+	 * Determine if a post can be viewed by a user based on the content visibility
+	 * groups assigned to that user.
 	 *
-	 * By default, a post's author has private post capabilities for this post, so we return
-	 * the current capabilities untouched.
+	 * @since 1.0.0
 	 *
-	 * @since 0.1.0
+	 * @param WP_Post $post
+	 * @param WP_User $user
 	 *
-	 * @param array  $caps    List of capabilities.
-	 * @param string $cap     The primitive capability.
-	 * @param int    $user_id ID of the user.
-	 * @param array  $args    Additional data, contains post ID.
-	 * @return array Updated list of capabilities.
+	 * @return bool
 	 */
-	public function allow_read_private_posts( $caps, $cap, $user_id, $args ) {
-		if ( ( 'read_post' === $cap && ! isset( $caps['read_post'] ) ) || ( 'read_page' === $cap && ! isset( $caps['read_page'] ) ) ) {
-			$post = get_post( $args[0] );
+	public function user_can_read_post( $post, $user ) {
+		$groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
 
-			if ( 'private' !== $post->post_status ) {
-				return $caps;
-			}
-
-			// Post authors can view their own posts.
-			if ( (int) $post->post_author === $user_id ) {
-				return $caps;
-			}
-
-			$groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
-
-			// No content visible groups have been assigned to this post.
-			if ( empty( $groups ) ) {
-				return $caps;
-			}
-
-			$group_member = false;
-			if ( in_array( 'site-member', $groups, true ) && is_user_member_of_blog( $user_id ) ) {
-				$group_member = true;
-			}
-
-			/**
-			 * Filter whether a user is a member of the allowed groups to view this private content.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param bool  $group_member Default false. True if the user is a member of the passed groups. False if not.
-			 * @param int   $user_id      ID of the user attempting to view content.
-			 * @param array $groups       List of allowed groups attached to a post.
-			 */
-			if ( false === apply_filters( 'user_in_content_visibility_groups', $group_member, $user_id, $groups ) ) {
-				return $caps;
-			}
-
-			$post_type = get_post_type_object( $post->post_type );
-
-			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
-
-			if ( 1 === count( $caps_keys ) ) {
-				$caps = array( $post_type->cap->read );
-			} else {
-				foreach ( $caps_keys as $k => $v ) {
-					unset( $caps[ $v ] );
-				}
-				$caps[] = $post_type->cap->read;
-				$caps = array_values( $caps );
-			}
+		if ( empty( $groups ) ) {
+			return true;
 		}
 
-		return $caps;
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		$group_member = false;
+		if ( in_array( 'site-member', $groups, true ) && is_user_member_of_blog( $user->ID ) ) {
+			$group_member = true;
+		}
+
+		/**
+		 * Filter whether a user is a member of the allowed groups to view this private content.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool  $group_member Default false. True if the user is a member of the passed groups. False if not.
+		 * @param int   $user_id      ID of the user attempting to view content.
+		 * @param array $groups       List of allowed groups attached to a post.
+		 */
+		return apply_filters( 'user_in_content_visibility_groups', $group_member, $user->ID, $groups );
 	}
 
 	/**
@@ -293,7 +262,7 @@ class WSUWP_Content_Visibility {
 			return;
 		}
 
-		if ( 'custom' !== $_POST['custom_visibility'] ) {
+		if ( ! isset( $_POST['custom_visibility'] ) || 'custom' !== $_POST['custom_visibility'] ) {
 			delete_post_meta( $post_id, '_content_visibility_viewer_groups' );
 
 			return;
@@ -325,6 +294,8 @@ class WSUWP_Content_Visibility {
 	 * When a post is being updated, check to see if custom visibility is being assigned and
 	 * set the post status and post password back to public like defaults if so.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param WP_Post $post Post object prepared for save.
 	 * @return WP_Post $post Modified post object.
 	 */
@@ -343,5 +314,34 @@ class WSUWP_Content_Visibility {
 		}
 
 		return $post;
+	}
+
+	/**
+	 * Capture a page request before serving a template and redirect if viewers are
+	 * restricted via custom content visibility.
+	 *
+	 * @since 1.0.0
+	 */
+	public function template_redirect() {
+		if ( is_singular() ) {
+			$post = get_post();
+
+			if ( 'publish' !== $post->post_status || false === post_type_supports( $post->post_type, 'wsuwp-content-visibility' ) ) {
+				return;
+			}
+
+			$user = wp_get_current_user();
+
+			if ( false === $this->user_can_read_post( $post, $user ) ) {
+				if ( ! is_user_logged_in() ) {
+					$redirect = wp_login_url( $_SERVER['REQUEST_URI'] );
+				} else {
+					$redirect = get_home_url();
+				}
+
+				wp_safe_redirect( $redirect );
+				exit;
+			}
+		}
 	}
 }
