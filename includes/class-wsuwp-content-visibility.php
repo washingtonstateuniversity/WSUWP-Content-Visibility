@@ -49,7 +49,6 @@ class WSUWP_Content_Visibility {
 	public function setup_hooks() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 		add_action( 'post_submitbox_misc_actions', array( $this, 'add_visibility_selection' ) );
-		add_action( 'init', array( $this, 'register_post_status' ), 10 );
 		add_action( 'init', array( $this, 'add_post_type_support' ), 11 );
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
 		add_filter( 'wp_insert_post_data', array( $this, 'wp_insert_post_data' ), 10 );
@@ -73,24 +72,6 @@ class WSUWP_Content_Visibility {
 		wp_enqueue_style( 'content-visibility-admin', plugins_url( 'css/admin' . $min . '.css', dirname( __FILE__ ) ), array(), false );
 		wp_enqueue_script( 'content-visibility-selection', plugins_url( 'js/post-admin' . $min . '.js', dirname( __FILE__ ) ), array( 'jquery' ), false, true );
 		wp_localize_script( 'content-visibility-selection', 'customPostL10n', array( 'custom' => __( 'Manage authorized viewers' ) ) );
-	}
-
-	/**
-	 * Register the custom post status used to track posts with custom visibility.
-	 *
-	 * @since 1.0.0
-	 */
-	public function register_post_status() {
-		$args = array(
-			'label' => 'Manage authorized viewers',
-			'public' => false,
-			'private' => true,
-			'exclude_from_search' => true,
-			'show_in_admin_all_list' => true,
-			'show_in_admin_status_list' => true,
-			'label_count' => _n_noop( 'Custom Visibility <span class="count">(%s)</span>', 'Custom Visibility <span class="count">(%s)</span>' ),
-		);
-		register_post_status( 'custom_visibility', $args );
 	}
 
 	/**
@@ -118,6 +99,7 @@ class WSUWP_Content_Visibility {
 
 		// If a current user can publish, the current user can modify visibility settings.
 		$can_publish = current_user_can( $post_type_object->cap->publish_posts );
+		$groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
 
 		?>
 		<div class="misc-pub-section misc-pub-custom-visibility" id="custom-visibility">
@@ -126,7 +108,7 @@ class WSUWP_Content_Visibility {
 			esc_html_e( 'Visibility:' );
 			$custom_groups_class = 'hide-if-js';
 
-			if ( 'custom_visibility' === $post->post_status ) {
+			if ( 'private' === $post->post_status && ! empty( $groups ) ) {
 				$post->post_password = '';
 				$visibility = 'custom';
 				$visibility_trans = __( 'Manage authorized viewers' );
@@ -318,7 +300,7 @@ class WSUWP_Content_Visibility {
 
 	/**
 	 * When a post is being updated, check to see if custom visibility is being assigned and
-	 * set the post status and post password back to public like defaults if so.
+	 * set the post status and post password back to private like defaults if so.
 	 *
 	 * @since 1.0.0
 	 *
@@ -331,7 +313,7 @@ class WSUWP_Content_Visibility {
 			return $post;
 		}
 
-		$post['post_status'] = 'custom_visibility';
+		$post['post_status'] = 'private';
 
 		if ( '' === $post['post_password'] ) {
 			$post['post_password'] = '';
