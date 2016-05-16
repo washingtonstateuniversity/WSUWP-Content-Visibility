@@ -52,7 +52,7 @@ class WSUWP_Content_Visibility {
 		add_action( 'init', array( $this, 'add_post_type_support' ), 11 );
 		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
 		add_filter( 'wp_insert_post_data', array( $this, 'wp_insert_post_data' ), 10 );
-		add_action( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
+		add_filter( 'user_has_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
 		add_action( 'template_redirect', array( $this, 'template_redirect' ), 9 );
 		add_filter( 'posts_results', array( $this, 'setup_trick_404_redirect' ) );
 	}
@@ -323,55 +323,40 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Manage capabilities allowing those other than a post's author to read a private post.
-	 *
-	 * By default, a post's author has private post capabilities for this post, so we return
-	 * the current capabilities untouched.
+	 * Manage capabilities allowing users to read private posts.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array  $caps    List of capabilities.
-	 * @param string $cap     The primitive capability.
-	 * @param int    $user_id ID of the user.
-	 * @param array  $args    Additional data, contains post ID.
+	 * @param array   $allcaps An array of all the user's capabilities.
+	 * @param array   $caps    Actual capabilities for meta capability.
+	 * @param array   $args    Optional parameters passed to has_cap(), typically object ID.
+	 * @param WP_User $user    The user object.
 	 * @return array Updated list of capabilities.
 	 */
-	public function allow_read_private_posts( $caps, $cap, $user_id, $args ) {
-		if ( 'read_post' !== $cap || empty( $args[0] ) ) {
-			return $caps;
+	public function allow_read_private_posts( $allcaps, $caps, $args, $user ) {
+		if ( 'read_post' !== $args[0] ) {
+			return $allcaps;
 		}
 
-		$post = get_post( $args[0] );
+		$post = get_post( $args[2] );
 
 		if ( ! post_type_supports( $post->post_type, 'wsuwp-content-visibility' ) ) {
-			return $caps;
+			return $allcaps;
 		}
 
 		$post_type = get_post_type_object( $post->post_type );
 
 		if ( ! in_array( $post_type->cap->read_private_posts, $caps, true ) ) {
-			return $caps;
+			return $allcaps;
 		}
-
-		$user = get_user_by( 'id', $user_id );
 
 		if ( false === $this->user_can_read_post( $post, $user ) ) {
-			return $caps;
+			return $allcaps;
 		}
 
-		$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
+		$allcaps[ $post_type->cap->read_private_posts ] = true;
 
-		if ( 1 === count( $caps_keys ) ) {
-			$caps = array( $post_type->cap->read );
-		} else {
-			foreach ( $caps_keys as $k => $v ) {
-				unset( $caps[ $v ] );
-			}
-			$caps[] = $post_type->cap->read;
-			$caps = array_values( $caps );
-		}
-
-		return $caps;
+		return $allcaps;
 	}
 
 	/**
