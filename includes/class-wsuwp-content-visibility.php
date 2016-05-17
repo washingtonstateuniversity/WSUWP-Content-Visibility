@@ -388,6 +388,8 @@ class WSUWP_Content_Visibility {
 	 * that will indicate a redirect should occur if the list of posts becomes
 	 * empty later in the process due to permissions issues.
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param array $results Results of a posts query before additional processing.
 	 *
 	 * @return array Untouched results.
