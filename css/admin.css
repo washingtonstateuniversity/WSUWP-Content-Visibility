@@ -48,3 +48,11 @@
 	padding-left: 1.5rem;
 	padding-top: .5rem;
 }
+
+#custom-sticky-span {
+	margin-left: 18px;
+}
+
+#side-sortables input#custom-post_password {
+	width: 94%;
+}

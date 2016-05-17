@@ -139,23 +139,15 @@ class WSUWP_Content_Visibility {
 				<a href="#custom-visibility" class="edit-custom-visibility hide-if-no-js"><span aria-hidden="true"><?php esc_html_e( 'Edit' ); ?></span> <span class="screen-reader-text"><?php esc_html_e( 'Edit visibility' ); ?></span></a>
 
 				<div id="post-custom-visibility-select" class="hide-if-js">
-					<input type="hidden" name="hidden_custom_post_password" id="hidden-custom-post-password" value="<?php echo esc_attr( $post->post_password ); ?>" />
-
-					<?php if ( 'post' === $post_type ) : ?>
-						<input type="checkbox" style="display:none" name="custom-hidden_post_sticky" id="hidden-custom-post-sticky" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> />
-					<?php endif; ?>
-
-					<input type="hidden" name="hidden_custom_post_visibility" id="hidden-custom-post-visibility" value="<?php echo esc_attr( $visibility ); ?>" />
-
 					<input type="radio" name="visibility" id="custom-visibility-radio-public" class="remove-custom-visibility" value="public" <?php checked( $visibility, 'public' ); ?> /> <label for="custom-visibility-radio-public" class="selectit"><?php esc_html_e( 'Public' ); ?></label><br />
 
 					<?php if ( 'post' === $post_type && current_user_can( 'edit_others_posts' ) ) : ?>
-						<span id="sticky-span"><input id="custom-sticky" name="custom-sticky" type="checkbox" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> /> <label for="custom-sticky" class="selectit"><?php esc_html_e( 'Stick this post to the front page' ); ?></label><br /></span>
+						<span id="custom-sticky-span"><input id="custom-sticky" name="custom-sticky" type="checkbox" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> /> <label for="custom-sticky" class="selectit"><?php esc_html_e( 'Stick this post to the front page' ); ?></label><br /></span>
 					<?php endif; ?>
 
 					<input type="radio" name="visibility" id="custom-visibility-radio-password" class="remove-custom-visibility" value="password" <?php checked( $visibility, 'password' ); ?> /> <label for="custom-visibility-radio-password" class="selectit"><?php esc_html_e( 'Password protected' ); ?></label><br />
 
-					<span id="password-span"><label for="post_password"><?php esc_html_e( 'Password:' ); ?></label> <input type="text" name="post_password" id="custom-post_password" value="<?php echo esc_attr( $post->post_password ); ?>"  maxlength="20" /><br /></span>
+					<span id="custom-password-span"><label for="custom-post_password"><?php esc_html_e( 'Password:' ); ?></label> <input type="text" name="custom-post_password" id="custom-post_password" value="<?php echo esc_attr( $post->post_password ); ?>"  maxlength="20" /><br /></span>
 
 					<input type="radio" name="visibility" id="custom-visibility-radio-private" class="remove-custom-visibility" value="private" <?php checked( $visibility, 'private' ); ?> /> <label for="custom-visibility-radio-private" class="selectit"><?php esc_html_e( 'Private' ); ?></label><br />
 

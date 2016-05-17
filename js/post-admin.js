@@ -25,16 +25,16 @@
 
 	updateVisibility = function() {
 		if ( "public" !== $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
-			$( "#stick" ).prop( "checked", false );
-			$( "#sticky-span" ).hide();
+			$( "#sticky" ).prop( "checked", false );
+			$( "#custom-sticky-span" ).hide();
 		} else {
-			$( "#sticky-span" ).show();
+			$( "#custom-sticky-span" ).show();
 		}
 
 		if ( "password" !== $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
-			$( "#password-span" ).hide();
+			$( "#custom-password-span" ).hide();
 		} else {
-			$( "#password-span" ).show();
+			$( "#custom-password-span" ).show();
 		}
 	};
 
@@ -129,6 +129,7 @@
 
 			if ( $postVisibilitySelect.is( ":hidden" ) ) {
 				updateVisibility();
+
 				$postVisibilitySelect.slideDown( "fast", function() {
 					$postVisibilitySelect.find( 'input[type="radio"]' ).first().focus();
 				} );
@@ -138,7 +139,7 @@
 
 		$( "#custom-visibility-radio-custom" ).click( function() {
 			$( ".remove-custom-visibility" ).each( function( x, el ) { $( el ).prop( "checked", false ); } );
-			$( "#hidden-custom-post-visibility" ).val( "public" );
+			$( "#hidden-post-visibility" ).val( "public" );
 			if ( 0 < Object.keys( window.checkedCustomGroups ).length ) {
 				$( ".custom-visibility-groups input[type='checkbox']" ).each( function( x, el ) {
 					if ( window.checkedCustomGroups.hasOwnProperty( $( el ).attr( "name" ) ) ) {
@@ -151,7 +152,8 @@
 			$( ".custom-visibility-groups" ).slideDown( "fast" );
 		} );
 
-		$( ".remove-custom-visibility" ).click( function() {
+		$( ".remove-custom-visibility" ).click( function( e ) {
+			$( "#hidden-post-visibility" ).val( $( e.target ).val() );
 			$( ".custom-visibility-groups" ).slideUp( "fast" );
 			$( "#custom-visibility-radio-custom" ).prop( "checked", false );
 			$( ".custom-visibility-groups input[type='checkbox']" ).each( function( x, el ) {
@@ -188,8 +190,8 @@
 				$( ".custom-visibility-groups" ).slideDown( "fast" );
 			}
 
-			$( "#custom-post_password" ).val( $( "#hidden-custom-post-password" ).val() );
-			$( "#custom-sticky" ).prop( "checked", $( "#hidden-custom-post-sticky" ).prop( "checked" ) );
+			$( "#custom-post_password" ).val( $( "#hidden-post-password" ).val() );
+			$( "#custom-sticky" ).prop( "checked", $( "#hidden-post-sticky" ).prop( "checked" ) );
 			$( "post-custom-visibility-display" ).html( visibility );
 			$( "#custom-visibility .edit-custom-visibility" ).show().focus();
 
@@ -198,11 +200,13 @@
 		} );
 
 		/**
-		 * When save is clicked under the available options, assign the current radio button values
+		 * When OK is clicked under the available options, assign the current radio button values
 		 * to the hidden inputs so that it will save along with the post.
 		 */
 		$postVisibilitySelect.find( ".save-post-custom-visibility" ).click( function( e ) {
-			var sticky;
+			var sticky_text;
+			var $sticky = $( "#sticky" );
+			var $customSticky = $( "#custom-sticky" );
 
 			$postVisibilitySelect.slideUp( "fast" );
 			$( "#custom-visibility .edit-custom-visibility" ).show().focus();
@@ -215,16 +219,26 @@
 
 			// Non-public posts can not be sticky.
 			if ( "public" !== $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
-				$( "#sticky" ).prop( "checked", false );
+				$customSticky.prop( "checked", false );
 			}
 
-			if ( $( "#sticky" ).prop( "checked" ) ) {
-				sticky = "Sticky";
+			if ( $customSticky.prop( "checked" ) ) {
+				$sticky.prop( "checked", true );
+				sticky_text = "Sticky";
 			} else {
-				sticky = "";
+				$sticky.prop( "checked", false );
+				sticky_text = "";
 			}
 
-			$( "#post-custom-visibility-display" ).html( localizeText( $postVisibilitySelect.find( "input:radio:checked" ).val() + sticky ) );
+			if ( "password" === $postVisibilitySelect.find( "input:radio:checked" ).val() ) {
+				$( "#hidden-post-password" ).val( $( "#custom-post_password" ).val() );
+				$( "#post_password" ).val( $( "#custom-post_password" ).val() );
+			} else {
+				$( "#hidden-post-password" ).val( "" );
+				$( "#post_password" ).val( "" );
+			}
+
+			$( "#post-custom-visibility-display" ).html( localizeText( $postVisibilitySelect.find( "input:radio:checked" ).val() + sticky_text ) );
 			e.preventDefault();
 		} );
 
