@@ -6,6 +6,8 @@
 	var visibility = $( "#post-custom-visibility-display" ).html();
 	var $postVisibilitySelect = $( "#post-custom-visibility-select" );
 	var $timestampdiv = $( "#timestampdiv" );
+	var $editCustomVisibility = $( "#custom-visibility" ).find( ".edit-custom-visibility" );
+	var $customVisibilityRadioCustom = $( "#custom-visibility-radio-custom" );
 
 	/**
 	 * Localize text depending on its custom status. Default post status selections
@@ -124,7 +126,7 @@
 		/**
 		 * When "Edit" is clicked next to custom visibility, show the available options.
 		 */
-		$( "#custom-visibility .edit-custom-visibility" ).click( function( e ) {
+		$editCustomVisibility.click( function( e ) {
 			e.preventDefault();
 
 			if ( $postVisibilitySelect.is( ":hidden" ) ) {
@@ -137,7 +139,7 @@
 			$( this ).hide();
 		} );
 
-		$( "#custom-visibility-radio-custom" ).click( function() {
+		$customVisibilityRadioCustom.click( function() {
 			$( ".remove-custom-visibility" ).each( function( x, el ) { $( el ).prop( "checked", false ); } );
 			$( "#hidden-post-visibility" ).val( "public" );
 			if ( 0 < Object.keys( window.checkedCustomGroups ).length ) {
@@ -179,12 +181,12 @@
 						$( el ).prop( "checked", false );
 					}
 				} );
-				$( "#custom-visibility-radio-custom" ).prop( "checked", true );
+				$customVisibilityRadioCustom.prop( "checked", true );
 			} else {
 				$( "#custom-visibility-radio-" + $( "#hidden-custom-post-visibility" ).val() ).prop( "checked", true );
 			}
 
-			if ( true === $( "#custom-visibility-radio-custom" ).prop( "checked" ) ) {
+			if ( true === $customVisibilityRadioCustom.prop( "checked" ) ) {
 				$( ".remove-custom-visibility" ).each( function( x, el ) { $( el ).prop( "checked", false ); } );
 				$( "#hidden-custom-post-visibility" ).val( "public" );
 				$( ".custom-visibility-groups" ).slideDown( "fast" );
@@ -193,7 +195,7 @@
 			$( "#custom-post_password" ).val( $( "#hidden-post-password" ).val() );
 			$( "#custom-sticky" ).prop( "checked", $( "#hidden-post-sticky" ).prop( "checked" ) );
 			$( "post-custom-visibility-display" ).html( visibility );
-			$( "#custom-visibility .edit-custom-visibility" ).show().focus();
+			$editCustomVisibility.show().focus();
 
 			updateText();
 			e.preventDefault();
@@ -209,11 +211,11 @@
 			var $customSticky = $( "#custom-sticky" );
 
 			$postVisibilitySelect.slideUp( "fast" );
-			$( "#custom-visibility .edit-custom-visibility" ).show().focus();
+			$editCustomVisibility.show().focus();
 
 			updateText();
 
-			if ( true !== $( "#custom-visibility-radio-custom" ).prop( "checked" ) ) {
+			if ( true !== $customVisibilityRadioCustom.prop( "checked" ) ) {
 				window.checkedCustomGroups = [];
 			}
 
