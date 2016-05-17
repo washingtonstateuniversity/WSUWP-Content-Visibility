@@ -63,6 +63,11 @@ class WSUWP_Content_Visibility {
 	 * @since 1.0.0
 	 */
 	public function admin_enqueue_scripts() {
+		$screen = get_current_screen();
+		if ( ! $screen || 'post' !== $screen->id || ! post_type_supports( $screen->post_type, 'wsuwp-content-visibility' ) ) {
+			return;
+		}
+
 		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
 			$min = '';
 		} else {
