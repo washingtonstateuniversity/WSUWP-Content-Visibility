@@ -98,7 +98,7 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 		$this->assertTrue( $can_read );
 	}
 
-	public function test_allow_read_private_posts_not_sent_when_user_is_not_authenticated() {
+	public function test_allow_read_private_posts_not_set_when_user_is_not_authenticated() {
 		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post', 'post_status' => 'custom_visibility' ) );
 
 		update_post_meta( $post_id, '_content_visibility_viewer_groups', array( 'site-member' ) );
@@ -106,15 +106,16 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 		$current_user_id = get_current_user_id();
 		wp_set_current_user( 0 );
 
-		$args = array( 0 => $post_id );
-		$cap = 'read_post';
+		$allcaps = array();
 		$caps = array( 'read_private_posts' );
+		$args = array( 'read_post', 0, $post_id );
+		$user = wp_get_current_user();
 
-		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $caps, $cap, 0, $args );
+		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $allcaps, $caps, $args, $user );
 
 		wp_set_current_user( $current_user_id );
 
-		$this->assertEqualSets( $user_can_read_post, array( 0 => 'read_private_posts' ) );
+		$this->assertEqualSets( $user_can_read_post, array() );
 	}
 
 	public function test_allow_read_private_posts_set_when_user_is_a_group_member() {
@@ -126,15 +127,16 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 		$current_user_id = get_current_user_id();
 		wp_set_current_user( $user_id );
 
-		$args = array( 0 => $post_id );
-		$cap = 'read_post';
+		$allcaps = array();
 		$caps = array( 'read_private_posts' );
+		$args = array( 'read_post', 0, $post_id );
+		$user = get_user_by( 'id', $user_id );
 
-		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $caps, $cap, $user_id, $args );
+		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $allcaps, $caps, $args, $user );
 
 		wp_set_current_user( $current_user_id );
 
-		$this->assertEqualSets( $user_can_read_post, array( 0 => 'read' ) );
+		$this->assertEqualSets( $user_can_read_post, array( 'read_private_posts' => true ) );
 	}
 
 	public function test_allow_read_private_posts_not_set_when_user_is_not_group_member() {
@@ -146,13 +148,14 @@ class Test_WSUWP_Content_Visibility extends WP_UnitTestCase {
 		$current_user_id = get_current_user_id();
 		wp_set_current_user( $user_id );
 
-		$args = array( 0 => $post_id );
-		$cap = 'read_post';
+		$allcaps = array();
 		$caps = array( 'read_private_posts' );
+		$args = array( 'read_post', 0, $post_id );
+		$user = get_user_by( 'id', $user_id );
 
-		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $caps, $cap, $user_id, $args );
-		wp_set_current_user( $user_id );
+		$user_can_read_post = WSUWP_Content_Visibility()->allow_read_private_posts( $allcaps, $caps, $args, $user );
+		wp_set_current_user( $current_user_id );
 
-		$this->assertEqualSets( $user_can_read_post, array( 0 => 'read_private_posts' ) );
+		$this->assertEqualSets( $user_can_read_post, array() );
 	}
 }
