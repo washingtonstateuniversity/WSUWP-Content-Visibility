@@ -11,6 +11,10 @@ notifications:
     on_failure: always
     on_start: never
 
+branches:
+  only:
+    - master
+
 matrix:
   include:
     - php: 5.6
@@ -26,7 +30,7 @@ matrix:
     - php: 7.0
       env: WP_VERSION=latest WP_MULTISITE=1
     - php: 5.6
-      env: WP_TRAVISCI=phpcs
+      env: WP_TRAVISCI=grunt
 
 before_script:
     - |
@@ -34,7 +38,7 @@ before_script:
         bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
       fi
     - |
-      if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
+      if [[ "$WP_TRAVISCI" == "grunt" ]] ; then
         npm install
         composer install
       fi
@@ -45,6 +49,8 @@ script:
         phpunit
       fi
     - |
-      if [[ "$WP_TRAVISCI" == "phpcs" ]] ; then
-        grunt phpcs
+      if [[ "$WP_TRAVISCI" == "grunt" ]] ; then
+        grunt css
+        grunt js
+        grunt php
       fi

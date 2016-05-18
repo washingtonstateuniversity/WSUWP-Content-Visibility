@@ -1,11 +1,29 @@
 <?php
 
-
 class WSUWP_Content_Visibility {
+
 	/**
 	 * @var WSUWP_Content_Visibility
 	 */
 	private static $instance;
+
+	/**
+	 * Provide a list of default groups supported by WSU Content Visibility.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @var array
+	 */
+	var $default_groups = array(
+		array( 'id' => 'site-member', 'name' => 'Members of this site' ),
+	);
+
+	/**
+	 * Whether to trigger a redirect if a 404 page is reached.
+	 *
+	 * @var bool
+	 */
+	var $private_redirect = false;
 
 	/**
 	 * Maintain and return the one instance of the plugin. Initiate hooks when
@@ -29,14 +47,36 @@ class WSUWP_Content_Visibility {
 	 * @since 0.1.0
 	 */
 	public function setup_hooks() {
-		add_action( 'init', array( $this, 'add_post_type_support' ), 10 );
-		add_filter( 'map_meta_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
-		add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 10, 1 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+		add_action( 'post_submitbox_misc_actions', array( $this, 'add_visibility_selection' ) );
+		add_action( 'init', array( $this, 'add_post_type_support' ), 11 );
+		add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
+		add_filter( 'wp_insert_post_data', array( $this, 'wp_insert_post_data' ), 10 );
+		add_filter( 'user_has_cap', array( $this, 'allow_read_private_posts' ), 10, 4 );
+		add_action( 'template_redirect', array( $this, 'template_redirect' ), 9 );
+		add_filter( 'posts_results', array( $this, 'setup_trick_404_redirect' ) );
+	}
 
-		add_action( 'wp_ajax_get_content_visibility_groups', array( $this, 'ajax_get_groups' ) );
-		add_action( 'wp_ajax_set_content_visibility_groups', array( $this, 'ajax_set_groups' ) );
-		add_action( 'wp_ajax_search_content_visibility_groups', array( $this, 'ajax_search_groups' ) );
+	/**
+	 * Enqueue the scripts and styles used in the admin interface.
+	 *
+	 * @since 1.0.0
+	 */
+	public function admin_enqueue_scripts() {
+		$screen = get_current_screen();
+		if ( ! $screen || 'post' !== $screen->base || ! post_type_supports( $screen->post_type, 'wsuwp-content-visibility' ) ) {
+			return;
+		}
+
+		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
+			$min = '';
+		} else {
+			$min = '.min';
+		}
+
+		wp_enqueue_style( 'content-visibility-admin', plugins_url( 'css/admin' . $min . '.css', dirname( __FILE__ ) ), array(), false );
+		wp_enqueue_script( 'content-visibility-selection', plugins_url( 'js/post-admin' . $min . '.js', dirname( __FILE__ ) ), array( 'jquery' ), false, true );
+		wp_localize_script( 'content-visibility-selection', 'customPostL10n', array( 'custom' => __( 'Manage authorized viewers' ) ) );
 	}
 
 	/**
@@ -50,284 +90,307 @@ class WSUWP_Content_Visibility {
 	}
 
 	/**
-	 * Manage capabilities allowing those other than a post's author to read a private post.
 	 *
-	 * By default, a post's author has private post capabilities for this post, so we return
-	 * the current capabilities untouched.
+	 * Forked originally from core code in wp-admin/includes/meta-boxes.php used to
+	 * assign a post's visibility.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 *
-	 * @param array  $caps    List of capabilities.
-	 * @param string $cap     The primitive capability.
-	 * @param int    $user_id ID of the user.
-	 * @param array  $args    Additional data, contains post ID.
-	 * @return array Updated list of capabilities.
+	 * @param WP_Post $post
 	 */
-	public function allow_read_private_posts( $caps, $cap, $user_id, $args ) {
-		if ( ( 'read_post' === $cap && ! isset( $caps['read_post'] ) ) || ( 'read_page' === $cap && ! isset( $caps['read_page'] ) ) ) {
-			$post = get_post( $args[0] );
+	public function add_visibility_selection( $post ) {
+		$post_type = $post->post_type;
+		$post_type_object = get_post_type_object( $post_type );
 
-			if ( 'private' !== $post->post_status ) {
-				return $caps;
-			}
+		// If a current user can publish, the current user can modify visibility settings.
+		$can_publish = current_user_can( $post_type_object->cap->publish_posts );
+		$groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
 
-			// Post authors can view their own posts.
-			if ( (int) $post->post_author === $user_id ) {
-				return $caps;
-			}
-
-			$groups = get_post_meta( $post->ID, '_content_visibility_groups', true );
-
-			// No content visible groups have been assigned to this post.
-			if ( empty( $groups ) ) {
-				return $caps;
-			}
-
-			/**
-			 * Filter whether a user is a member of the allowed groups to view this private content.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param bool  $value   Default false. True if the user is a member of the passed groups. False if not.
-			 * @param int   $user_id ID of the user attempting to view content.
-			 * @param array $groups  List of allowed groups attached to a post.
-			 */
-			if ( false === apply_filters( 'user_in_content_visibility_groups', false, $user_id, $groups ) ) {
-				return $caps;
-			}
-
-			$post_type = get_post_type_object( $post->post_type );
-
-			$caps_keys = array_keys( $caps, $post_type->cap->read_private_posts );
-
-			if ( 1 === count( $caps_keys ) ) {
-				$caps = array( $post_type->cap->read );
-			} else {
-				foreach ( $caps_keys as $k => $v ) {
-					unset( $caps[ $v ] );
-				}
-				$caps[] = $post_type->cap->read;
-				$caps = array_values( $caps );
-			}
-		}
-
-		return $caps;
-	}
-
-	/**
-	 * Add the meta boxes created by the plugin to supporting post types.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string  $post_type The slug of the current post type being edited.
-	 */
-	public function add_meta_boxes( $post_type ) {
-		if ( post_type_supports( $post_type, 'wsuwp-content-visibility' ) ) {
-			add_meta_box( 'wsuwp-content-visibility', 'Content Visibility', array( $this, 'display_visibility_meta_box' ), null, 'side', 'high' );
-		}
-	}
-
-	/**
-	 * Display the meta box used to assign and maintain visibility for users and groups.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_Post $post The current post being edited.
-	 */
-	public function display_visibility_meta_box( $post ) {
 		?>
-		<p class="description">Groups and users with access to view this content.</p>
-		<input type="button" id="visibility-group-manage" class="primary button" value="Manage Groups" />
-		<div class="visibility-group-overlay">
-			<div class="visibility-group-overlay-wrapper">
-				<div class="visibility-group-overlay-header">
-					<div class="visibility-group-overlay-title">
-						<h3>Manage Groups</h3>
+		<div class="misc-pub-section misc-pub-custom-visibility" id="custom-visibility">
+			<?php
+
+			esc_html_e( 'Visibility:' );
+			$custom_groups_class = 'hide-if-js';
+
+			if ( 'private' === $post->post_status && ! empty( $groups ) ) {
+				$post->post_password = '';
+				$visibility = 'custom';
+				$visibility_trans = __( 'Manage authorized viewers' );
+				$custom_groups_class = '';
+			} elseif ( 'private' === $post->post_status ) {
+				$post->post_password = '';
+				$visibility = 'private';
+				$visibility_trans = __( 'Private' );
+			} elseif ( ! empty( $post->post_password ) ) {
+				$visibility = 'password';
+				$visibility_trans = __( 'Password protected' );
+			} elseif ( 'post' === $post->post_type && is_sticky( $post->ID ) ) {
+				$visibility = 'public';
+				$visibility_trans = __( 'Public, Sticky' );
+			} else {
+				$visibility = 'public';
+				$visibility_trans = __( 'Public' );
+			}
+
+			?>
+			<span id="post-custom-visibility-display"><?php echo esc_html( $visibility_trans ); ?></span>
+			<?php if ( $can_publish ) { ?>
+				<a href="#custom-visibility" class="edit-custom-visibility hide-if-no-js"><span aria-hidden="true"><?php esc_html_e( 'Edit' ); ?></span> <span class="screen-reader-text"><?php esc_html_e( 'Edit visibility' ); ?></span></a>
+
+				<div id="post-custom-visibility-select" class="hide-if-js">
+					<input type="radio" name="visibility" id="custom-visibility-radio-public" class="remove-custom-visibility" value="public" <?php checked( $visibility, 'public' ); ?> /> <label for="custom-visibility-radio-public" class="selectit"><?php esc_html_e( 'Public' ); ?></label><br />
+
+					<?php if ( 'post' === $post_type && current_user_can( 'edit_others_posts' ) ) : ?>
+						<span id="custom-sticky-span"><input id="custom-sticky" name="custom-sticky" type="checkbox" value="sticky" <?php checked( is_sticky( $post->ID ) ); ?> /> <label for="custom-sticky" class="selectit"><?php esc_html_e( 'Stick this post to the front page' ); ?></label><br /></span>
+					<?php endif; ?>
+
+					<input type="radio" name="visibility" id="custom-visibility-radio-password" class="remove-custom-visibility" value="password" <?php checked( $visibility, 'password' ); ?> /> <label for="custom-visibility-radio-password" class="selectit"><?php esc_html_e( 'Password protected' ); ?></label><br />
+
+					<span id="custom-password-span"><label for="custom-post_password"><?php esc_html_e( 'Password:' ); ?></label> <input type="text" name="custom-post_password" id="custom-post_password" value="<?php echo esc_attr( $post->post_password ); ?>"  maxlength="20" /><br /></span>
+
+					<input type="radio" name="visibility" id="custom-visibility-radio-private" class="remove-custom-visibility" value="private" <?php checked( $visibility, 'private' ); ?> /> <label for="custom-visibility-radio-private" class="selectit"><?php esc_html_e( 'Private' ); ?></label><br />
+
+					<input type="radio" name="custom_visibility" id="custom-visibility-radio-custom" value="custom" <?php checked( $visibility, 'custom' ); ?> /> <label for="custom-visibility-radio-custom" class="selectit"><?php esc_html_e( 'Manage authorized viewers' ); ?></label><br />
+
+					<div class="custom-visibility-groups <?php echo $custom_groups_class; ?>">
+						<?php $this->display_viewers_meta_box( $post ); ?>
 					</div>
-					<div class="visibility-group-overlay-close">Close</div>
+					<p>
+						<a href="#custom-visibility" class="save-post-custom-visibility hide-if-no-js button"><?php esc_html_e( 'OK' ); ?></a>
+						<a href="#custom-visibility" class="cancel-post-custom-visibility hide-if-no-js button-cancel"><?php esc_html_e( 'Cancel' ); ?></a>
+					</p>
 				</div>
-				<div class="visibility-group-overlay-body">
-					<div class="visibility-group-search-area">
-						<input type="text" id="visibility-search-term" name="visibility_search_term" class="widefat" />
-						<input type="button" id="visibility-group-search" class="button button-primary button-large" value="Find" />
-					</div>
-					<div class="visibility-save-cancel">
-						<input type="button" id="visibility-save-groups" class="button button-primary button-large" value="Save" />
-						<input type="button" id="visibility-cancel-groups" class="button button-secondary button-large" value="Cancel" />
-					</div>
-					<div id="visibility-current-group-list" class="visibility-group-list visibility-group-list-open">
-						<div id="visibility-current-group-tab" class="visibility-group-tab visibility-current-tab">Currently Assigned</div>
-						<div class="visibility-group-results"></div>
-					</div>
-					<div id="visibility-find-group-list" class="visibility-group-list">
-						<div id="visibility-find-group-tab" class="visibility-group-tab">Group Results</div>
-						<div class="visibility-group-results pending-results"></div>"
-					</div>
-				</div>
-			</div>
+			<?php } ?>
 		</div>
-		<div class="clear"></div>
-		<script type="text/template" id="visibility-group-template">
-			<div class="visibility-group-single">
-				<div class="visibility-group-select <%= selectedClass %>" data-group-id="<%= groupID %>"></div>
-				<div class="visibility-group-name"><%= groupName %></div>
-				<div class="visibility-group-member-count">(<%= memberCount %> members)</div>
-				<ul class="visibility-group-members">
-					<% for(var member in memberList) { %>
-					<li><%= memberList[member] %></li>
-					<% } %>
-				</ul>
-				<div class="clear"></div>
-			</div>
-		</script>
 		<?php
+
 	}
 
 	/**
-	 * Enqueue Javascript required in the admin on support post type screens.
+	 * Determine if a post can be viewed by a user based on the content visibility
+	 * groups assigned to that user.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
+	 *
+	 * @param WP_Post $post
+	 * @param WP_User $user
+	 *
+	 * @return bool
 	 */
-	public function admin_enqueue_scripts() {
-		if ( ! isset( get_current_screen()->post_type ) || ! post_type_supports( get_current_screen()->post_type, 'wsuwp-content-visibility' ) ) {
+	public function user_can_read_post( $post, $user ) {
+		$groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
+
+		if ( empty( $groups ) ) {
+			return true;
+		}
+
+		if ( ! is_user_logged_in() ) {
+			return false;
+		}
+
+		$group_member = false;
+		if ( in_array( 'site-member', $groups, true ) && is_user_member_of_blog( $user->ID ) ) {
+			$group_member = true;
+		}
+
+		/**
+		 * Filter whether a user is a member of the allowed groups to view this private content.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool  $group_member Default false. True if the user is a member of the passed groups. False if not.
+		 * @param int   $user_id      ID of the user attempting to view content.
+		 * @param array $groups       List of allowed groups attached to a post.
+		 */
+		return apply_filters( 'user_in_content_visibility_groups', $group_member, $user->ID, $groups );
+	}
+
+	/**
+	 * Display the meta box used to determine which groups of users can view a piece of content.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_Post $post
+	 */
+	public function display_viewers_meta_box( $post ) {
+		?>
+		<input type="hidden" name="visibility_viewers_box" value="1" />
+		<?php
+		wp_nonce_field( 'save-content-visibility', '_content_visibility_nonce' );
+
+		/**
+		 * Filter the default groups that will always display in the interface.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $group_details Array of details, containing only basic information by default.
+		 */
+		$default_groups = apply_filters( 'content_visibility_default_groups', $this->default_groups );
+
+		$viewer_groups = (array) get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
+
+		foreach ( $default_groups as $group ) {
+			$viewer_selected = false;
+
+			if ( in_array( $group['id'], $viewer_groups, true ) ) {
+				$viewer_selected = true;
+			}
+
+			?>
+			<div class="content-visibility-group-selection">
+				<input type="checkbox" id="view_<?php echo esc_attr( $group['id'] ); ?>" name="content_view[<?php echo esc_attr( $group['id'] ); ?>]" <?php checked( $viewer_selected ); ?>>
+				<label for="view_<?php echo esc_attr( $group['id'] ); ?>"><?php echo esc_html( $group['name'] ); ?></label>
+			</div>
+			<?php
+		}
+	}
+
+	/**
+	 * Save viewer and editor group data associated with a post.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int     $post_id
+	 * @param WP_Post $post
+	 */
+	public function save_post( $post_id, $post ) {
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 			return;
 		}
 
-		wp_enqueue_style( 'wsuwp-content-visibility', plugins_url( 'css/admin-style.min.css', __FILE__ ), array(), false );
-		wp_enqueue_script( 'wsuwp-content-visibility', plugins_url( 'js/content-visibility.min.js', __FILE__ ), array( 'backbone' ), false, true );
+		if ( ! post_type_supports( $post->post_type, 'wsuwp-content-visibility' ) ) {
+			return;
+		}
 
-		$data = get_post_meta( get_the_ID(), '_content_visibility_groups', true );
-		$ajax_nonce = wp_create_nonce( 'wsu-visibility-groups' );
+		if ( ! isset( $_POST['visibility_viewers_box'] ) || ! isset( $_POST['_content_visibility_nonce'] ) || ! wp_verify_nonce( $_POST['_content_visibility_nonce'], 'save-content-visibility' ) ) {
+			return;
+		}
 
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups', $data );
-		wp_localize_script( 'wsuwp-content-visibility', 'wsuVisibilityGroups_nonce', $ajax_nonce );
+		if ( ! isset( $_POST['custom_visibility'] ) || 'custom' !== $_POST['custom_visibility'] ) {
+			delete_post_meta( $post_id, '_content_visibility_viewer_groups' );
+
+			return;
+		}
+
+		/**
+		 * Filter the default groups that will always display in the interface.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $group_details Array of details, containing only basic information by default.
+		 */
+		$default_groups = apply_filters( 'content_visibility_default_groups', $this->default_groups );
+		$default_group_ids = wp_list_pluck( $default_groups, 'id' );
+
+		$content_viewer_ids = isset( $_POST['content_view'] ) ? (array) $_POST['content_view'] : array();
+		$save_groups = array();
+
+		foreach ( $content_viewer_ids as $content_viewer => $v ) {
+			if ( in_array( $content_viewer, $default_group_ids, true ) ) {
+				$save_groups[] = $content_viewer;
+			}
+		}
+
+		update_post_meta( $post_id, '_content_visibility_viewer_groups', $save_groups );
 	}
 
 	/**
-	 * Retrieve a current list of groups attached to a post for display in the
-	 * admin modal.
+	 * When a post is being updated, check to see if custom visibility is being assigned and
+	 * set the post status and post password back to private like defaults if so.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
+	 *
+	 * @param WP_Post $post Post object prepared for save.
+	 * @return WP_Post $post Modified post object.
 	 */
-	public function ajax_get_groups() {
-		check_ajax_referer( 'wsu-visibility-groups' );
-
-		$post_id = absint( $_POST['post_id'] );
-
-		if ( 0 === $post_id ) {
-			wp_send_json_error( 'Invalid post ID.' );
+	public function wp_insert_post_data( $post ) {
+		// If custom visibility is not set, leave the post alone.
+		if ( ! isset( $_POST['custom_visibility'] ) || 'custom' !== $_POST['custom_visibility'] ) {
+			return $post;
 		}
 
-		$groups = get_post_meta( $post_id, '_content_visibility_groups', true );
+		$post['post_status'] = 'private';
 
-		if ( empty( $groups ) ) {
-			wp_send_json_success( array() );
+		if ( '' === $post['post_password'] ) {
+			$post['post_password'] = '';
 		}
 
-		$return_groups = array();
-
-		foreach ( $groups as $group ) {
-			$group_details = array(
-				'id' => $group,
-				'display_name' => $group,
-				'member_count' => '',
-				'member_list' => '',
-			);
-			/**
-			 * Filter the details associated with assigned visibility groups.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param array $group_details Array of details, containing only basic information by default.
-			 */
-			$group_details = apply_filters( 'content_visibility_group_details', $group_details );
-
-			// Current groups should always have the selected class enabled.
-			$group_details['selected_class'] = 'visibility-group-selected';
-
-			$return_groups[] = $group_details;
-		}
-
-		wp_send_json_success( $return_groups );
+		return $post;
 	}
 
 	/**
-	 * Save any changes made to a list of visibility groups assigned to a post.
+	 * Manage capabilities allowing users to read private posts.
 	 *
 	 * @since 0.1.0
+	 *
+	 * @param array   $allcaps An array of all the user's capabilities.
+	 * @param array   $caps    Actual capabilities for meta capability.
+	 * @param array   $args    Optional parameters passed to has_cap(), typically object ID.
+	 * @param WP_User $user    The user object.
+	 * @return array Updated list of capabilities.
 	 */
-	public function ajax_set_groups() {
-		check_ajax_referer( 'wsu-visibility-groups' );
-
-		if ( ! isset( $_POST['post_id'] ) || 0 === absint( $_POST['post_id'] ) ) {
-			wp_send_json_error( 'Invalid post ID.' );
+	public function allow_read_private_posts( $allcaps, $caps, $args, $user ) {
+		if ( 'read_post' !== $args[0] ) {
+			return $allcaps;
 		}
 
-		if ( ! isset( $_POST['visibility_groups'] ) || empty( $_POST['visibility_groups'] ) ) {
-			wp_send_json_success( 'No changes.' );
+		$post = get_post( $args[2] );
+
+		if ( ! post_type_supports( $post->post_type, 'wsuwp-content-visibility' ) ) {
+			return $allcaps;
 		}
 
-		$post_id = absint( $_POST['post_id'] );
-		$group_ids = array_filter( $_POST['visibility_groups'], 'sanitize_text_field' );
+		$post_type = get_post_type_object( $post->post_type );
 
-		update_post_meta( $post_id, '_content_visibility_groups', $group_ids );
+		if ( ! in_array( $post_type->cap->read_private_posts, $caps, true ) ) {
+			return $allcaps;
+		}
 
-		wp_send_json_success( 'Changes saved.' );
+		if ( false === $this->user_can_read_post( $post, $user ) ) {
+			return $allcaps;
+		}
+
+		$allcaps[ $post_type->cap->read_private_posts ] = true;
+
+		return $allcaps;
 	}
 
 	/**
-	 * Retrieve a list of groups matching the provided search terms from an AJAX request.
+	 * Capture a page request before serving a template and redirect if viewers have
+	 * been marked for restriction via custom content visibility.
 	 *
-	 * @since 0.1.0
+	 * @since 1.0.0
 	 */
-	public function ajax_search_groups() {
-		check_ajax_referer( 'wsu-visibility-groups' );
+	public function template_redirect() {
+		if ( is_404() && $this->private_redirect ) {
+			if ( ! is_user_logged_in() ) {
+				$redirect = wp_login_url( $_SERVER['REQUEST_URI'] );
+			} else {
+				$redirect = get_home_url();
+			}
 
-		$search_text = sanitize_text_field( $_POST['visibility_group'] );
+			wp_safe_redirect( $redirect );
+			exit;
+		}
+	}
 
-		if ( empty( $search_text ) ) {
-			wp_send_json_error( 'Empty search text was submitted.' );
+	/**
+	 * If results are available at this point in the process, then mark the flag
+	 * that will indicate a redirect should occur if the list of posts becomes
+	 * empty later in the process due to permissions issues.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param array $results Results of a posts query before additional processing.
+	 *
+	 * @return array Untouched results.
+	 */
+	public function setup_trick_404_redirect( $results ) {
+		if ( isset( $results[0] ) && 0 < count( $results[0] ) ) {
+			$this->private_redirect = true;
 		}
 
-		if ( 1 === mb_strlen( $search_text ) ) {
-			wp_send_json_error( 'Please provide more than one character.' );
-		}
-
-		$post_id = absint( $_POST['post_id'] );
-
-		if ( 0 === $post_id ) {
-			$current_groups = array();
-		} else {
-			$current_groups = get_post_meta( $post_id, '_content_visibility_groups', true );
-		}
-
-		// Has this term been used recently?
-		$groups = wp_cache_get( md5( $search_text ), 'content-visibility' );
-
-		if ( ! $groups ) {
-			/**
-			 * Filter the groups attached to a search term.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param array  $groups      Group result data.
-			 * @param string $search_text Text used to search for a group.
-			 * @param int     $post_id     ID of the post being edited.
-			 */
-			$groups = apply_filters( 'content_visibility_group_search', $groups, $search_text, $post_id );
-
-			// Cache a search term's results for an hour.
-			wp_cache_add( md5( $search_text ), $groups, 'content-visibility', 3600 );
-		}
-
-		$return_groups = array();
-
-		foreach ( $groups as $group ) {
-			$group['selected_class'] = in_array( $group['id'], (array) $current_groups, true ) ? 'visibility-group-selected' : '';
-
-			$return_groups[] = $group;
-		}
-
-		wp_send_json_success( $return_groups );
+		return $results;
 	}
 }
