@@ -331,7 +331,8 @@ class WSUWP_Content_Visibility {
 	 * @return array Updated list of capabilities.
 	 */
 	public function allow_read_private_posts( $allcaps, $caps, $args, $user ) {
-		if ( 'read_post' !== $args[0] ) {
+		$watch_caps = apply_filters( 'wsuwp_content_visibility_caps', array( 'read_post' ) );
+		if ( ! in_array( $args[0], $watch_caps, true ) ) {
 			return $allcaps;
 		}
 
