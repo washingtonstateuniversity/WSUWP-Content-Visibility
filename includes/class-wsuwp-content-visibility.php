@@ -105,6 +105,7 @@ class WSUWP_Content_Visibility {
 		// If a current user can publish, the current user can modify visibility settings.
 		$can_publish = current_user_can( $post_type_object->cap->publish_posts );
 		$groups = get_post_meta( $post->ID, '_content_visibility_viewer_groups', true );
+		$redirect = get_post_meta( $post->ID, '_content_visibility_redirect', true );
 
 		?>
 		<div class="misc-pub-section misc-pub-custom-visibility" id="custom-visibility">
@@ -155,6 +156,8 @@ class WSUWP_Content_Visibility {
 
 					<div class="custom-visibility-groups <?php echo $custom_groups_class; ?>">
 						<?php $this->display_viewers_meta_box( $post ); ?>
+						<label>Redirect: <input type="text" name="content_visibility_redirect" id="custom-visibility-redirect" value="<?php echo esc_attr( $redirect ); ?>" placeholder="/something..."  /></label><br />
+						<span class="small-text">*Redirect path must be relative to site (i.e. /something...)</span><br> 
 					</div>
 					<p>
 						<a href="#custom-visibility" class="save-post-custom-visibility hide-if-no-js button"><?php esc_html_e( 'OK' ); ?></a>
@@ -293,6 +296,14 @@ class WSUWP_Content_Visibility {
 		}
 
 		update_post_meta( $post_id, '_content_visibility_viewer_groups', $save_groups );
+
+		if ( isset( $_POST['content_visibility_redirect'] ) ) {
+
+			$redirect = sanitize_text_field( $_POST['content_visibility_redirect'] );
+
+			update_post_meta( $post_id, '_content_visibility_redirect', $redirect );
+
+		} // End if
 	}
 
 	/**
@@ -368,7 +379,15 @@ class WSUWP_Content_Visibility {
 			if ( ! is_user_logged_in() ) {
 				$redirect = wp_login_url( $_SERVER['REQUEST_URI'] );
 			} else {
+				$post_id  = get_the_ID();
 				$redirect = get_home_url();
+				if ( ! empty( $post_id ) ) {
+					$path = get_post_meta( $post->ID, '_content_visibility_redirect', true );
+					// Safety check - make sure this isn't a full url and doesn't have query params on it.
+					if ( ( strpos( $path, '.' ) === false ) && ( strpos( $path, '?' ) === false ) ) {
+						$redirect .= $path;
+					} // End if
+				}
 			}
 
 			wp_safe_redirect( $redirect );
