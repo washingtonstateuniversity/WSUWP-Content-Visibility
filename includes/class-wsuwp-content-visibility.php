@@ -382,7 +382,7 @@ class WSUWP_Content_Visibility {
 				$post_id  = get_the_ID();
 				$redirect = get_home_url();
 				if ( ! empty( $post_id ) ) {
-					$path = get_post_meta( $post->ID, '_content_visibility_redirect', true );
+					$path = get_post_meta( $post_id, '_content_visibility_redirect', true );
 					// Safety check - make sure this isn't a full url and doesn't have query params on it.
 					if ( ( strpos( $path, '.' ) === false ) && ( strpos( $path, '?' ) === false ) ) {
 						$redirect .= $path;
