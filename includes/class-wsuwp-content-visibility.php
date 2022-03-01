@@ -388,7 +388,8 @@ class WSUWP_Content_Visibility {
 	 * @return array Untouched results.
 	 */
 	public function setup_trick_404_redirect( $results ) {
-		if ( isset( $results[0] ) && 0 < count( $results[0] ) ) {
+
+		if ( isset( $results[0] ) && 0 < count( $results ) ) {
 			$this->private_redirect = true;
 		}
 

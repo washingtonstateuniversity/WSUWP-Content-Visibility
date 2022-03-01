@@ -4,7 +4,7 @@ Plugin Name: WSU Content Visibility
 Plugin URI: https://web.wsu.edu/
 Description: Control the visibility of content for authenticated users.
 Author: washingtonstateuniversity, jeremyfelt
-Version: 1.1.1
+Version: 1.1.2
 */
 
 // If this file is called directly, abort.
