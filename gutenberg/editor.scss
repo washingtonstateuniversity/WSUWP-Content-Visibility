@@ -1,0 +1,18 @@
+.block-editor {
+  .wsu-gutenberg-content-visibility__container {
+    display: block;
+    margin-bottom: 1.5em;
+  }
+
+  .wsu-gutenberg-content-visibility__header {
+    margin-bottom: 0.75em;
+  }
+
+  .wsu-gutenberg-content-visibility__options {
+    padding: 0 0.75em;
+  }
+
+  .wsu-gutenberg-content-visibility__option:not(:last-child) {
+    margin-bottom: 0.5em;
+  }
+}

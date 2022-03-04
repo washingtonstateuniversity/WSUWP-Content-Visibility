@@ -26,3 +26,7 @@ add_action( 'after_setup_theme', 'WSUWP_Content_Visibility' );
 function WSUWP_Content_Visibility() {
 	return WSUWP_Content_Visibility::get_instance();
 }
+
+
+// Initiate plugin
+require_once __DIR__ . '/includes/plugin.php';
